@@ -1,4 +1,5 @@
-// Main game script
+// Tic Tac Snipe Main game script
+// Anthony Moore & Joe Muzina
 // Credit: Tutorial 2_9/3_9 from Alfred Shaker for environment setup, flat plane/light, BaseApplication
 // basic flat grassy plane with a light.
 // Camera movement is locked.
