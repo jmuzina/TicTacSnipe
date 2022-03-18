@@ -1,5 +1,6 @@
 // Main game script
-// Tutorial 2_9 setup has been imitated to create a basic flat grassy plane with a light.
+// Credit: Tutorial 2_9/3_9 from Alfred Shaker for environment setup, flat plane/light, BaseApplication
+// basic flat grassy plane with a light.
 // Camera movement is locked.
 
 #include "ticTacSnipe.h"
