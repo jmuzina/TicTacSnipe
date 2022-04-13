@@ -29,5 +29,8 @@
     <ClInclude Include="..\ticTacSnipe.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\MotionState.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

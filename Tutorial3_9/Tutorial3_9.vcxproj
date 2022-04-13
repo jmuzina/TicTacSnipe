@@ -156,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\BaseApplication.h" />
+    <ClInclude Include="..\MotionState.h" />
     <ClInclude Include="..\ticTacSnipe.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,3 +1,6 @@
+#ifndef TICTACSNIPE_H
+#define TICTACSNIPE_H
+
 #include <Terrain/OgreTerrain.h>
 #include <Terrain/OgreTerrainGroup.h>
 #include <Terrain/OgreTerrain.h>
@@ -18,14 +21,12 @@ protected:
 	virtual void createFrameListener();
 	virtual void destroyScene();
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& fe);
+	void CreateBullet(const btVector3& Position, btScalar Mass, const btVector3& scale, char* name);
 	bool mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id);
 
 private:
 	
 	void createBulletSim(void); 
-	void configureTerrainDefaults(Ogre::Light*);
-	void defineTerrain(long x, long y);
-	void initBlendMaps(Ogre::Terrain* terrain);
 	btDefaultCollisionConfiguration* collisionConfiguration;
 	btCollisionDispatcher* dispatcher;
 	btBroadphaseInterface* overlappingPairCache;
@@ -33,12 +34,10 @@ private:
 	btDiscreteDynamicsWorld* dynamicsWorld;
 	btCollisionShape* groundShape;
 	btAlignedObjectArray<btCollisionShape*> collisionShapes;
-
-	bool mTerrainsImported;
-	Ogre::TerrainGlobalOptions* mTerrainGlobals;
+	
 	Ogre::Vector3               cameraSpawnPoint;
 	Ogre::Vector3               cameraLookPoint;
-	Ogre::TerrainGroup* mTerrainGroup;
+	//Ogre::TerrainGroup* mTerrainGroup;
 };
 
-
+#endif
