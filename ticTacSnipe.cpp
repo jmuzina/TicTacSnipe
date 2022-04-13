@@ -11,8 +11,8 @@ void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 
 TicTacSnipeApplication::TicTacSnipeApplication()
     :
-    cameraSpawnPoint(Ogre::Vector3(0, 400, -1500)),
-    cameraLookPoint(Ogre::Vector3(0, 400, 500))
+    cameraSpawnPoint(Ogre::Vector3(2623, 500, 750)),
+    cameraLookPoint(Ogre::Vector3(2253, 250, 1210))
 {
 }
 
@@ -99,7 +99,7 @@ void TicTacSnipeApplication::createScene()
     }
 
     mTerrainGroup->freeTemporaryResources();
-    createBulletSim();
+    CreateBulletSim();
 }
 
 void TicTacSnipeApplication::configureTerrainDefaults(Ogre::Light* light)
@@ -208,9 +208,21 @@ void TicTacSnipeApplication::createFrameListener()
     BaseApplication::createFrameListener();
 }
 
+bool TicTacSnipeApplication::frameStarted(const Ogre::FrameEvent& evt)
+{
+    //	mKeyboard->capture();
+    //	mMouse->capture();
+        // update physics simulation
+        //dynamicsWorld->stepSimulation(evt.timeSinceLastFrame,10);
+    dynamicsWorld->stepSimulation(evt.timeSinceLastFrame);
+    return true;
+}
+
+
 void TicTacSnipeApplication::destroyScene()
 {
-
+    OGRE_DELETE mTerrainGroup;
+    OGRE_DELETE mTerrainGlobals;
 }
 
 bool TicTacSnipeApplication::frameRenderingQueued(const Ogre::FrameEvent& fe)
@@ -220,7 +232,7 @@ bool TicTacSnipeApplication::frameRenderingQueued(const Ogre::FrameEvent& fe)
     return ret;
 }
 
-void TicTacSnipeApplication::createBulletSim(void) {
+void TicTacSnipeApplication::CreateBulletSim(void) {
     ///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
     collisionConfiguration = new btDefaultCollisionConfiguration();
 
@@ -236,7 +248,8 @@ void TicTacSnipeApplication::createBulletSim(void) {
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
     dynamicsWorld->setGravity(btVector3(0, -100, 0));
     {
-        
+        ///create a few basic rigid bodies
+        // start with ground plane, 1500, 1500
         Ogre::Terrain* pTerrain = mTerrainGroup->getTerrain(0, 0);
         float* terrainHeightData = pTerrain->getHeightData();
         Ogre::Vector3 terrainPosition = pTerrain->getPosition();
@@ -255,7 +268,7 @@ void TicTacSnipeApplication::createBulletSim(void) {
             pTerrain->getSize(),
             pTerrain->getSize(),
             pDataConvert,
-            1,
+            1/*ignore*/,
             pTerrain->getMinHeight(),
             pTerrain->getMaxHeight(),
             1,
@@ -282,15 +295,15 @@ void TicTacSnipeApplication::createBulletSim(void) {
 
         dynamicsWorld->addRigidBody(mGroundBody);
         collisionShapes.push_back(groundShape);
-
+        /*
         CreateBullet(btVector3(2623, 500, 750), 1.0f, btVector3(0.3, 0.3, 0.3), "Cube0");
-        //CreateCube(btVector3(2263, 150, 1200), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube1");
-        //CreateCube(btVector3(2253, 100, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube2");
-        //CreateCube(btVector3(2253, 200, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube3");
-        //CreateCube(btVector3(2253, 250, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube4");
-        //CreateCube(btVector3(1963, 150, 1660),1.0f,btVector3(0.2,0.2,0.2),"Cube1");
+        CreateBullet(btVector3(2263, 150, 1200), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube1");
+        CreateBullet(btVector3(2253, 100, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube2");
+        CreateBullet(btVector3(2253, 200, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube3");
+        CreateBullet(btVector3(2253, 250, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube4");
+        //CreateBullet(btVector3(1963, 150, 1660),1.0f,btVector3(0.2,0.2,0.2),"Cube1");
+        */
 
-        
     }
 }
 
@@ -299,20 +312,30 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Ma
     Ogre::Vector3 size = Ogre::Vector3::ZERO;
     Ogre::Vector3 pos = Ogre::Vector3::ZERO;
     Ogre::SceneNode* boxNode;
-    Ogre::Entity* bulletEntity;
+    Ogre::Entity* boxentity;
     // Convert the bullet physics vector to the ogre vector
     pos.x = Position.getX();
     pos.y = Position.getY();
     pos.z = Position.getZ();
+    boxentity = mSceneMgr->createEntity(name + std::to_string(bullets.size() + 1), "cube.mesh");
+    bullets.push(boxentity);
+    if (bullets.size() > MAX_BULLETS) {
 
-    bulletEntity = mSceneMgr->createEntity(name, Ogre::SceneManager::PT_SPHERE);
-    //bulletEntity->setScale(Vector3(scale.x,scale.y,scale.z));
-    bulletEntity->setCastShadows(true);
+        if (bullets.front() != nullptr) {
+            Ogre::Entity* bulletToDelete = bullets.front();
+            if (bulletToDelete->isAttached())
+                bulletToDelete->detachFromParent();
+
+            delete bullets.front();
+        }
+    }
+    //boxentity->setScale(Vector3(scale.x,scale.y,scale.z));
+    boxentity->setCastShadows(true);
     boxNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-    boxNode->attachObject(bulletEntity);
+    boxNode->attachObject(boxentity);
     boxNode->scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
     //boxNode->setScale(Vector3(0.1,0.1,0.1));
-    Ogre::AxisAlignedBox boundingB = bulletEntity->getBoundingBox();
+    Ogre::AxisAlignedBox boundingB = boxentity->getBoundingBox();
     //Ogre::AxisAlignedBox boundingB = boxNode->_getWorldAABB();
     boundingB.scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
     size = boundingB.getSize() * 0.95f;
@@ -334,6 +357,44 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Ma
     // Add it to the physics world
     dynamicsWorld->addRigidBody(RigidBody);
     collisionShapes.push_back(Shape);
+}
+
+Ogre::ManualObject* TicTacSnipeApplication::CreateBulletMesh(Ogre::String name, Ogre::String matName) {
+
+    Ogre::ManualObject* cube = new Ogre::ManualObject(name);
+
+    cube->begin(matName);
+
+    cube->position(0.5, -0.5, 1.0); cube->normal(0.408248, -0.816497, 0.408248); cube->textureCoord(1, 0);
+    cube->position(-0.5, -0.5, 0.0); cube->normal(-0.408248, -0.816497, -0.408248); cube->textureCoord(0, 1);
+    cube->position(0.5, -0.5, 0.0); cube->normal(0.666667, -0.333333, -0.666667); cube->textureCoord(1, 1);
+    cube->position(-0.5, -0.5, 1.0); cube->normal(-0.666667, -0.333333, 0.666667); cube->textureCoord(0, 0);
+    cube->position(0.5, 0.5, 1.0); cube->normal(0.666667, 0.333333, 0.666667); cube->textureCoord(1, 0);
+    cube->position(-0.5, -0.5, 1.0); cube->normal(-0.666667, -0.333333, 0.666667); cube->textureCoord(0, 1);
+    cube->position(0.5, -0.5, 1.0); cube->normal(0.408248, -0.816497, 0.408248); cube->textureCoord(1, 1);
+    cube->position(-0.5, 0.5, 1.0); cube->normal(-0.408248, 0.816497, 0.408248); cube->textureCoord(0, 0);
+    cube->position(-0.5, 0.5, 0.0); cube->normal(-0.666667, 0.333333, -0.666667); cube->textureCoord(0, 1);
+    cube->position(-0.5, -0.5, 0.0); cube->normal(-0.408248, -0.816497, -0.408248); cube->textureCoord(1, 1);
+    cube->position(-0.5, -0.5, 1.0); cube->normal(-0.666667, -0.333333, 0.666667); cube->textureCoord(1, 0);
+    cube->position(0.5, -0.5, 0.0); cube->normal(0.666667, -0.333333, -0.666667); cube->textureCoord(0, 1);
+    cube->position(0.5, 0.5, 0.0); cube->normal(0.408248, 0.816497, -0.408248); cube->textureCoord(1, 1);
+    cube->position(0.5, -0.5, 1.0); cube->normal(0.408248, -0.816497, 0.408248); cube->textureCoord(0, 0);
+    cube->position(0.5, -0.5, 0.0); cube->normal(0.666667, -0.333333, -0.666667); cube->textureCoord(1, 0);
+    cube->position(-0.5, -0.5, 0.0); cube->normal(-0.408248, -0.816497, -0.408248); cube->textureCoord(0, 0);
+    cube->position(-0.5, 0.5, 1.0); cube->normal(-0.408248, 0.816497, 0.408248); cube->textureCoord(1, 0);
+    cube->position(0.5, 0.5, 0.0); cube->normal(0.408248, 0.816497, -0.408248); cube->textureCoord(0, 1);
+    cube->position(-0.5, 0.5, 0.0); cube->normal(-0.666667, 0.333333, -0.666667); cube->textureCoord(1, 1);
+    cube->position(0.5, 0.5, 1.0); cube->normal(0.666667, 0.333333, 0.666667); cube->textureCoord(0, 0);
+
+    cube->triangle(0, 1, 2);      cube->triangle(3, 1, 0);
+    cube->triangle(4, 5, 6);      cube->triangle(4, 7, 5);
+    cube->triangle(8, 9, 10);      cube->triangle(10, 7, 8);
+    cube->triangle(4, 11, 12);   cube->triangle(4, 13, 11);
+    cube->triangle(14, 8, 12);   cube->triangle(14, 15, 8);
+    cube->triangle(16, 17, 18);   cube->triangle(16, 19, 17);
+    cube->end();
+
+    return cube;
 }
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img)
