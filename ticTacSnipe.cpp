@@ -5,6 +5,7 @@
 // Camera movement is locked.
 
 #include "ticTacSnipe.h"
+#include "MotionState.h"
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 
@@ -98,6 +99,7 @@ void TicTacSnipeApplication::createScene()
     }
 
     mTerrainGroup->freeTemporaryResources();
+    createBulletSim();
 }
 
 void TicTacSnipeApplication::configureTerrainDefaults(Ogre::Light* light)
@@ -194,11 +196,9 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
 }
 
 bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id) {
-    //Ogre::Entity* ball = mSceneMgr->createEntity("bullet", Ogre::SceneManager::PT_SPHERE);
-    //ball.
-	//temp ray
-	//https://www.ogre3d.org/docs/api/1.9/class_ogre_1_1_ray.html#details
-	createBulletSim();
+    const Ogre::Vector3 camPos = mCamera->getPosition();
+
+    CreateBullet(btVector3(camPos.x, camPos.y, camPos.z), 1.0f, btVector3(0.2, 0.2, 0.2), "Bullet");
     return true;
 }
 
@@ -221,77 +221,119 @@ bool TicTacSnipeApplication::frameRenderingQueued(const Ogre::FrameEvent& fe)
 }
 
 void TicTacSnipeApplication::createBulletSim(void) {
-	///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
-	collisionConfiguration = new btDefaultCollisionConfiguration();
+    ///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
+    collisionConfiguration = new btDefaultCollisionConfiguration();
 
-	///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
-	dispatcher = new   btCollisionDispatcher(collisionConfiguration);
+    ///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
+    dispatcher = new   btCollisionDispatcher(collisionConfiguration);
 
-	///btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
-	overlappingPairCache = new btDbvtBroadphase();
+    ///btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
+    overlappingPairCache = new btDbvtBroadphase();
 
-	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
-	solver = new btSequentialImpulseConstraintSolver;
+    ///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
+    solver = new btSequentialImpulseConstraintSolver;
 
-	dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-	dynamicsWorld->setGravity(btVector3(0, -100, 0));
-	{
-		///create a few basic rigid bodies
-		// start with ground plane, 1500, 1500
+    dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+    dynamicsWorld->setGravity(btVector3(0, -100, 0));
+    {
+        
+        Ogre::Terrain* pTerrain = mTerrainGroup->getTerrain(0, 0);
+        float* terrainHeightData = pTerrain->getHeightData();
+        Ogre::Vector3 terrainPosition = pTerrain->getPosition();
+        float* pDataConvert = new float[pTerrain->getSize() * pTerrain->getSize()];
+        for (int i = 0; i < pTerrain->getSize(); i++)
+            memcpy(
+                pDataConvert + pTerrain->getSize() * i, // source
+                terrainHeightData + pTerrain->getSize() * (pTerrain->getSize() - i - 1), // target
+                sizeof(float) * (pTerrain->getSize()) // size
+            );
 
-		Ogre::Terrain* pTerrain = mTerrainGroup->getTerrain(0, 0);
-		float* terrainHeightData = pTerrain->getHeightData();
-		Ogre::Vector3 terrainPosition = pTerrain->getPosition();
-		float* pDataConvert = new float[pTerrain->getSize() * pTerrain->getSize()];
-		for (int i = 0; i < pTerrain->getSize(); i++)
-			memcpy(
-				pDataConvert + pTerrain->getSize() * i, // source
-				terrainHeightData + pTerrain->getSize() * (pTerrain->getSize() - i - 1), // target
-				sizeof(float) * (pTerrain->getSize()) // size
-			);
+        float metersBetweenVertices = pTerrain->getWorldSize() / (pTerrain->getSize() - 1); //edit: fixed 0 -> 1 on 2010-08-13
+        btVector3 localScaling(metersBetweenVertices, 1, metersBetweenVertices);
 
-		float metersBetweenVertices = pTerrain->getWorldSize() / (pTerrain->getSize() - 1); //edit: fixed 0 -> 1 on 2010-08-13
-		btVector3 localScaling(metersBetweenVertices, 1, metersBetweenVertices);
+        btHeightfieldTerrainShape* groundShape = new btHeightfieldTerrainShape(
+            pTerrain->getSize(),
+            pTerrain->getSize(),
+            pDataConvert,
+            1,
+            pTerrain->getMinHeight(),
+            pTerrain->getMaxHeight(),
+            1,
+            PHY_FLOAT,
+            true);
 
-		btHeightfieldTerrainShape* groundShape = new btHeightfieldTerrainShape(
-			pTerrain->getSize(),
-			pTerrain->getSize(),
-			pDataConvert,
-			1,
-			pTerrain->getMinHeight(),
-			pTerrain->getMaxHeight(),
-			1,
-			PHY_FLOAT,
-			true);
+        groundShape->setUseDiamondSubdivision(true);
+        groundShape->setLocalScaling(localScaling);
 
-		groundShape->setUseDiamondSubdivision(true);
-		groundShape->setLocalScaling(localScaling);
+        btRigidBody* mGroundBody = new btRigidBody(0, new btDefaultMotionState(), groundShape);
 
-		btRigidBody* mGroundBody = new btRigidBody(0, new btDefaultMotionState(), groundShape);
+        mGroundBody->getWorldTransform().setOrigin(
+            btVector3(
+                terrainPosition.x,
+                terrainPosition.y + (pTerrain->getMaxHeight() - pTerrain->getMinHeight()) / 2,
+                terrainPosition.z));
 
-		mGroundBody->getWorldTransform().setOrigin(
-			btVector3(
-				terrainPosition.x,
-				terrainPosition.y + (pTerrain->getMaxHeight() - pTerrain->getMinHeight()) / 2,
-				terrainPosition.z));
+        mGroundBody->getWorldTransform().setRotation(
+            btQuaternion(
+                Ogre::Quaternion::IDENTITY.x,
+                Ogre::Quaternion::IDENTITY.y,
+                Ogre::Quaternion::IDENTITY.z,
+                Ogre::Quaternion::IDENTITY.w));
 
-		mGroundBody->getWorldTransform().setRotation(
-			btQuaternion(
-				Ogre::Quaternion::IDENTITY.x,
-				Ogre::Quaternion::IDENTITY.y,
-				Ogre::Quaternion::IDENTITY.z,
-				Ogre::Quaternion::IDENTITY.w));
+        dynamicsWorld->addRigidBody(mGroundBody);
+        collisionShapes.push_back(groundShape);
 
-		dynamicsWorld->addRigidBody(mGroundBody);
-		collisionShapes.push_back(groundShape);
-		
-		//CreateCube(btVector3(2623, 500, 750), 1.0f, btVector3(0.3, 0.3, 0.3), "Cube0");
-		//CreateCube(btVector3(2263, 150, 1200), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube1");
-		//CreateCube(btVector3(2253, 100, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube2");
-		//CreateCube(btVector3(2253, 200, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube3");
-		//CreateCube(btVector3(2253, 250, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube4");
-		//CreateCube(btVector3(1963, 150, 1660),1.0f,btVector3(0.2,0.2,0.2),"Cube1");
-	}
+        CreateBullet(btVector3(2623, 500, 750), 1.0f, btVector3(0.3, 0.3, 0.3), "Cube0");
+        //CreateCube(btVector3(2263, 150, 1200), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube1");
+        //CreateCube(btVector3(2253, 100, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube2");
+        //CreateCube(btVector3(2253, 200, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube3");
+        //CreateCube(btVector3(2253, 250, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube4");
+        //CreateCube(btVector3(1963, 150, 1660),1.0f,btVector3(0.2,0.2,0.2),"Cube1");
+
+        
+    }
+}
+
+void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Mass, const btVector3& scale, char* name) {
+    // empty ogre vectors for the cubes size and position
+    Ogre::Vector3 size = Ogre::Vector3::ZERO;
+    Ogre::Vector3 pos = Ogre::Vector3::ZERO;
+    Ogre::SceneNode* boxNode;
+    Ogre::Entity* bulletEntity;
+    // Convert the bullet physics vector to the ogre vector
+    pos.x = Position.getX();
+    pos.y = Position.getY();
+    pos.z = Position.getZ();
+
+    bulletEntity = mSceneMgr->createEntity(name, Ogre::SceneManager::PT_SPHERE);
+    //bulletEntity->setScale(Vector3(scale.x,scale.y,scale.z));
+    bulletEntity->setCastShadows(true);
+    boxNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+    boxNode->attachObject(bulletEntity);
+    boxNode->scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
+    //boxNode->setScale(Vector3(0.1,0.1,0.1));
+    Ogre::AxisAlignedBox boundingB = bulletEntity->getBoundingBox();
+    //Ogre::AxisAlignedBox boundingB = boxNode->_getWorldAABB();
+    boundingB.scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
+    size = boundingB.getSize() * 0.95f;
+    btTransform Transform;
+    Transform.setIdentity();
+    Transform.setOrigin(Position);
+    MotionState* ms = new MotionState(Transform, boxNode);
+    //Give the rigid body half the size
+    // of our cube and tell it to create a BoxShape (cube)
+    btVector3 HalfExtents(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f);
+    btCollisionShape* Shape = new btBoxShape(HalfExtents);
+    btVector3 LocalInertia;
+    Shape->calculateLocalInertia(Mass, LocalInertia);
+    btRigidBody* RigidBody = new btRigidBody(Mass, ms, Shape, LocalInertia);
+
+    // Store a pointer to the Ogre Node so we can update it later
+    RigidBody->setUserPointer((void*)(boxNode));
+
+    // Add it to the physics world
+    dynamicsWorld->addRigidBody(RigidBody);
+    collisionShapes.push_back(Shape);
 }
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img)

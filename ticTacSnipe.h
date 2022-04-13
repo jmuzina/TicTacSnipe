@@ -1,3 +1,6 @@
+#ifndef TICTACSNIPE_H
+#define TICTACSNIPE_H
+
 #include <Terrain/OgreTerrain.h>
 #include <Terrain/OgreTerrainGroup.h>
 #include <Terrain/OgreTerrain.h>
@@ -17,6 +20,7 @@ protected:
 	virtual void createScene();
 	virtual void createFrameListener();
 	virtual void destroyScene();
+	void CreateBullet(const btVector3& Position, btScalar Mass, const btVector3& scale, char* name);
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& fe);
 	bool mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id);
 
@@ -41,4 +45,4 @@ private:
 	Ogre::TerrainGroup* mTerrainGroup;
 };
 
-
+#endif
