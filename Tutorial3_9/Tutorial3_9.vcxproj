@@ -155,7 +155,9 @@
     <ClCompile Include="..\ticTacSnipe.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ActiveBullets.h" />
     <ClInclude Include="..\BaseApplication.h" />
+    <ClInclude Include="..\Bullet.h" />
     <ClInclude Include="..\MotionState.h" />
     <ClInclude Include="..\ticTacSnipe.h" />
   </ItemGroup>

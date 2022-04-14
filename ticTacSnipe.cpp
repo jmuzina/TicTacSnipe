@@ -6,6 +6,7 @@
 
 #include "ticTacSnipe.h"
 #include "MotionState.h"
+#include "Bullet.h"
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 
@@ -210,10 +211,6 @@ void TicTacSnipeApplication::createFrameListener()
 
 bool TicTacSnipeApplication::frameStarted(const Ogre::FrameEvent& evt)
 {
-    //	mKeyboard->capture();
-    //	mMouse->capture();
-        // update physics simulation
-        //dynamicsWorld->stepSimulation(evt.timeSinceLastFrame,10);
     dynamicsWorld->stepSimulation(evt.timeSinceLastFrame);
     return true;
 }
@@ -295,15 +292,7 @@ void TicTacSnipeApplication::CreateBulletSim(void) {
 
         dynamicsWorld->addRigidBody(mGroundBody);
         collisionShapes.push_back(groundShape);
-        /*
-        CreateBullet(btVector3(2623, 500, 750), 1.0f, btVector3(0.3, 0.3, 0.3), "Cube0");
-        CreateBullet(btVector3(2263, 150, 1200), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube1");
-        CreateBullet(btVector3(2253, 100, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube2");
-        CreateBullet(btVector3(2253, 200, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube3");
-        CreateBullet(btVector3(2253, 250, 1210), 1.0f, btVector3(0.2, 0.2, 0.2), "Cube4");
-        //CreateBullet(btVector3(1963, 150, 1660),1.0f,btVector3(0.2,0.2,0.2),"Cube1");
-        */
-
+        activeBullets_ = new ActiveBullets(dynamicsWorld);
     }
 }
 
@@ -317,18 +306,8 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Ma
     pos.x = Position.getX();
     pos.y = Position.getY();
     pos.z = Position.getZ();
-    boxentity = mSceneMgr->createEntity(name + std::to_string(bullets.size() + 1), "cube.mesh");
-    bullets.push(boxentity);
-    if (bullets.size() > MAX_BULLETS) {
-
-        if (bullets.front() != nullptr) {
-            Ogre::Entity* bulletToDelete = bullets.front();
-            if (bulletToDelete->isAttached())
-                bulletToDelete->detachFromParent();
-
-            delete bullets.front();
-        }
-    }
+    boxentity = mSceneMgr->createEntity("cube.mesh");
+    
     //boxentity->setScale(Vector3(scale.x,scale.y,scale.z));
     boxentity->setCastShadows(true);
     boxNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
@@ -357,44 +336,7 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Ma
     // Add it to the physics world
     dynamicsWorld->addRigidBody(RigidBody);
     collisionShapes.push_back(Shape);
-}
-
-Ogre::ManualObject* TicTacSnipeApplication::CreateBulletMesh(Ogre::String name, Ogre::String matName) {
-
-    Ogre::ManualObject* cube = new Ogre::ManualObject(name);
-
-    cube->begin(matName);
-
-    cube->position(0.5, -0.5, 1.0); cube->normal(0.408248, -0.816497, 0.408248); cube->textureCoord(1, 0);
-    cube->position(-0.5, -0.5, 0.0); cube->normal(-0.408248, -0.816497, -0.408248); cube->textureCoord(0, 1);
-    cube->position(0.5, -0.5, 0.0); cube->normal(0.666667, -0.333333, -0.666667); cube->textureCoord(1, 1);
-    cube->position(-0.5, -0.5, 1.0); cube->normal(-0.666667, -0.333333, 0.666667); cube->textureCoord(0, 0);
-    cube->position(0.5, 0.5, 1.0); cube->normal(0.666667, 0.333333, 0.666667); cube->textureCoord(1, 0);
-    cube->position(-0.5, -0.5, 1.0); cube->normal(-0.666667, -0.333333, 0.666667); cube->textureCoord(0, 1);
-    cube->position(0.5, -0.5, 1.0); cube->normal(0.408248, -0.816497, 0.408248); cube->textureCoord(1, 1);
-    cube->position(-0.5, 0.5, 1.0); cube->normal(-0.408248, 0.816497, 0.408248); cube->textureCoord(0, 0);
-    cube->position(-0.5, 0.5, 0.0); cube->normal(-0.666667, 0.333333, -0.666667); cube->textureCoord(0, 1);
-    cube->position(-0.5, -0.5, 0.0); cube->normal(-0.408248, -0.816497, -0.408248); cube->textureCoord(1, 1);
-    cube->position(-0.5, -0.5, 1.0); cube->normal(-0.666667, -0.333333, 0.666667); cube->textureCoord(1, 0);
-    cube->position(0.5, -0.5, 0.0); cube->normal(0.666667, -0.333333, -0.666667); cube->textureCoord(0, 1);
-    cube->position(0.5, 0.5, 0.0); cube->normal(0.408248, 0.816497, -0.408248); cube->textureCoord(1, 1);
-    cube->position(0.5, -0.5, 1.0); cube->normal(0.408248, -0.816497, 0.408248); cube->textureCoord(0, 0);
-    cube->position(0.5, -0.5, 0.0); cube->normal(0.666667, -0.333333, -0.666667); cube->textureCoord(1, 0);
-    cube->position(-0.5, -0.5, 0.0); cube->normal(-0.408248, -0.816497, -0.408248); cube->textureCoord(0, 0);
-    cube->position(-0.5, 0.5, 1.0); cube->normal(-0.408248, 0.816497, 0.408248); cube->textureCoord(1, 0);
-    cube->position(0.5, 0.5, 0.0); cube->normal(0.408248, 0.816497, -0.408248); cube->textureCoord(0, 1);
-    cube->position(-0.5, 0.5, 0.0); cube->normal(-0.666667, 0.333333, -0.666667); cube->textureCoord(1, 1);
-    cube->position(0.5, 0.5, 1.0); cube->normal(0.666667, 0.333333, 0.666667); cube->textureCoord(0, 0);
-
-    cube->triangle(0, 1, 2);      cube->triangle(3, 1, 0);
-    cube->triangle(4, 5, 6);      cube->triangle(4, 7, 5);
-    cube->triangle(8, 9, 10);      cube->triangle(10, 7, 8);
-    cube->triangle(4, 11, 12);   cube->triangle(4, 13, 11);
-    cube->triangle(14, 8, 12);   cube->triangle(14, 15, 8);
-    cube->triangle(16, 17, 18);   cube->triangle(16, 19, 17);
-    cube->end();
-
-    return cube;
+    activeBullets_->registerBullet(boxentity, RigidBody, Shape);
 }
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img)
