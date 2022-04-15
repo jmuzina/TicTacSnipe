@@ -32,13 +32,13 @@
     <ClInclude Include="..\MotionState.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Bullet.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ActiveBullets.h">
+    <ClInclude Include="..\Collidable.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\TicTacToeBoard.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ActiveCollidables.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

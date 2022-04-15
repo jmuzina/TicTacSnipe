@@ -10,8 +10,8 @@
 #include "../../bullet-2.82/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "BaseApplication.h"
 #include <queue>
-#include "Bullet.h"
-#include "ActiveBullets.h"
+#include "Collidable.h"
+#include "ActiveCollidables.h"
 #include "TicTacToeBoard.h"
 using namespace Ogre;
 
@@ -25,7 +25,7 @@ protected:
 	virtual void createScene();
 	virtual void createFrameListener();
 	virtual void destroyScene();
-	void CreateBullet(const btVector3& Position, btScalar Mass, const btVector3& scale, char* name);
+	void CreateBullet(const btVector3& collidablePosititon, btScalar Mass, const btVector3& scale, char* name);
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& fe);
 	bool frameStarted(const Ogre::FrameEvent& evt);
 	bool mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id);
@@ -49,7 +49,7 @@ private:
 	Ogre::Vector3               cameraSpawnPoint;
 	Ogre::Vector3               cameraLookPoint;
 	Ogre::TerrainGroup* mTerrainGroup;
-	ActiveBullets* activeBullets_;
+	ActiveCollidables* ActiveCollidables_;
 	std::vector<TicTacToeBoard*> boards_ = std::vector<TicTacToeBoard*>();
 };
 

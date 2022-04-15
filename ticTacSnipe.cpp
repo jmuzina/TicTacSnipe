@@ -6,7 +6,7 @@
 
 #include "ticTacSnipe.h"
 #include "MotionState.h"
-#include "Bullet.h"
+#include "Collidable.h"
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 
@@ -125,8 +125,9 @@ void TicTacSnipeApplication::createScene()
     }
 
     mTerrainGroup->freeTemporaryResources();
-    TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, cameraLookPoint, cameraLookPoint, Vector3(0.2, 1, 1));
     CreateBulletSim();
+    TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(0,0,0,1), Vector3(0.2, 1, 1));
+    
 }
 
 void TicTacSnipeApplication::configureTerrainDefaults(Ogre::Light* light)
@@ -225,7 +226,7 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
 bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id) {
     const Ogre::Vector3 camPos = mCamera->getPosition();
 
-    CreateBullet(btVector3(camPos.x, camPos.y, camPos.z), 1.0f, btVector3(0.2, 0.2, 0.2), "Bullet");
+    CreateBullet(btVector3(camPos.x, camPos.y, camPos.z), 1.0f, btVector3(0.02, 0.02, 0.02), "Bullet");
     return true;
 }
 
@@ -318,20 +319,20 @@ void TicTacSnipeApplication::CreateBulletSim(void) {
 
         dynamicsWorld->addRigidBody(mGroundBody);
         collisionShapes.push_back(groundShape);
-        activeBullets_ = new ActiveBullets(dynamicsWorld);
+        ActiveCollidables_ = new ActiveCollidables(dynamicsWorld);
     }
 }
 
-void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Mass, const btVector3& scale, char* name) {
+void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon, btScalar Mass, const btVector3& scale, char* name) {
     // empty ogre vectors for the cubes size and position
     Ogre::Vector3 size = Ogre::Vector3::ZERO;
     Ogre::Vector3 pos = Ogre::Vector3::ZERO;
     Ogre::SceneNode* boxNode;
     Ogre::Entity* boxentity;
     // Convert the bullet physics vector to the ogre vector
-    pos.x = Position.getX();
-    pos.y = Position.getY();
-    pos.z = Position.getZ();
+    pos.x = collidablePosititon.getX();
+    pos.y = collidablePosititon.getY();
+    pos.z = collidablePosititon.getZ();
     boxentity = mSceneMgr->createEntity("cube.mesh");
     
     //boxentity->setScale(Vector3(scale.x,scale.y,scale.z));
@@ -339,17 +340,16 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Ma
     boxNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     boxNode->attachObject(boxentity);
     boxNode->scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
-    //boxNode->setScale(Vector3(0.1,0.1,0.1));
+
     Ogre::AxisAlignedBox boundingB = boxentity->getBoundingBox();
-    //Ogre::AxisAlignedBox boundingB = boxNode->_getWorldAABB();
+
     boundingB.scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
     size = boundingB.getSize() * 0.95f;
     btTransform Transform;
     Transform.setIdentity();
-    Transform.setOrigin(Position);
+    Transform.setOrigin(collidablePosititon);
     MotionState* ms = new MotionState(Transform, boxNode);
-    //Give the rigid body half the size
-    // of our cube and tell it to create a BoxShape (cube)
+
     btVector3 HalfExtents(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f);
     btCollisionShape* Shape = new btBoxShape(HalfExtents);
     btVector3 LocalInertia;
@@ -362,7 +362,7 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& Position, btScalar Ma
     // Add it to the physics world
     dynamicsWorld->addRigidBody(RigidBody);
     collisionShapes.push_back(Shape);
-    activeBullets_->registerBullet(boxentity, RigidBody, Shape);
+    ActiveCollidables_->registerBullet(boxentity, RigidBody, Shape);
 }
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img)
