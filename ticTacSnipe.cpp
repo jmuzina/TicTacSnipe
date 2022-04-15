@@ -10,6 +10,31 @@
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 
+void TicTacSnipeApplication::loadMesh(String source, String name) {    
+    FILE* pFile = fopen(source.c_str(), "rb");
+    if (!pFile)
+        OGRE_EXCEPT(Exception::ERR_FILE_NOT_FOUND, "File " + source + " not found.", "OgreMeshLoaded");
+
+    struct stat tagStat;
+    stat(source.c_str(), &tagStat);
+    MemoryDataStream* memstream = new MemoryDataStream(source, tagStat.st_size, true);
+    fread((void*)memstream->getPtr(), tagStat.st_size, 1, pFile);
+    fclose(pFile);
+
+    // give the resource a name -- it can be the full pathname if you like, since it's 
+    // just going to be the key in an STL associative tree container
+    MeshPtr pMesh = MeshManager::getSingleton().createManual(name, ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+
+    // this part does the actual load into the live Mesh object created above
+    MeshSerializer meshSerializer;
+    DataStreamPtr stream(memstream);
+    meshSerializer.importMesh(stream, pMesh.getPointer());
+
+    // and finally, now that we have a named Mesh resource, we can use it
+    // in our createEntity() call...
+    //Entity* pF35_1 = m_pSceneMgr->createEntity("LocalMesh_Ent", "LocalMesh");
+}
+
 TicTacSnipeApplication::TicTacSnipeApplication()
     :
     cameraSpawnPoint(Ogre::Vector3(2623, 500, 750)),
@@ -100,6 +125,7 @@ void TicTacSnipeApplication::createScene()
     }
 
     mTerrainGroup->freeTemporaryResources();
+    TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, cameraLookPoint, cameraLookPoint, Vector3(0.2, 1, 1));
     CreateBulletSim();
 }
 

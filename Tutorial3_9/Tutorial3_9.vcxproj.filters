@@ -38,5 +38,8 @@
     <ClInclude Include="..\ActiveBullets.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\TicTacToeBoard.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

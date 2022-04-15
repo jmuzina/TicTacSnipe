@@ -12,6 +12,8 @@
 #include <queue>
 #include "Bullet.h"
 #include "ActiveBullets.h"
+#include "TicTacToeBoard.h"
+using namespace Ogre;
 
 class TicTacSnipeApplication : public BaseApplication
 {
@@ -29,11 +31,11 @@ protected:
 	bool mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id);
 
 private:
-	
 	void CreateBulletSim(void); 
 	void configureTerrainDefaults(Ogre::Light*);
 	void defineTerrain(long x, long y);
 	void initBlendMaps(Ogre::Terrain* terrain);
+	void loadMesh(String, String);
 	btDefaultCollisionConfiguration* collisionConfiguration;
 	btCollisionDispatcher* dispatcher;
 	btBroadphaseInterface* overlappingPairCache;
@@ -48,6 +50,7 @@ private:
 	Ogre::Vector3               cameraLookPoint;
 	Ogre::TerrainGroup* mTerrainGroup;
 	ActiveBullets* activeBullets_;
+	std::vector<TicTacToeBoard*> boards_ = std::vector<TicTacToeBoard*>();
 };
 
 #endif

@@ -394,13 +394,13 @@ bool BaseApplication::keyPressed(const OIS::KeyEvent& arg)
         mShutDown = true;
     }
 
-    // mCameraMan->injectKeyDown(arg);  // allows camera to move with keypresses
+     mCameraMan->injectKeyDown(arg);  // allows camera to move with keypresses
     return true;
 }
 //---------------------------------------------------------------------------
 bool BaseApplication::keyReleased(const OIS::KeyEvent& arg)
 {
-    // mCameraMan->injectKeyUp(arg); // allows camera to stop moving once key has been pressed causing it to move
+     mCameraMan->injectKeyUp(arg); // allows camera to stop moving once key has been pressed causing it to move
     return true;
 }
 //---------------------------------------------------------------------------
