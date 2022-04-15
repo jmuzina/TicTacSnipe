@@ -16,6 +16,8 @@ public:
         dynamicsWorld_ = dynamicsWorld;
         ActiveCollidables_ = ActiveCollidables;
 		baseBoardNode_ = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+
+        // Create the base board and enable it for physics collisions
 		Entity* baseBoard = mSceneMgr->createEntity("cube.mesh");
 		baseBoardNode_->attachObject(baseBoard);
         baseBoard->setCastShadows(true);
@@ -44,18 +46,21 @@ public:
         btVector3 HalfExtents(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f);
         btCollisionShape* Shape = new btBoxShape(HalfExtents);
         btVector3 LocalInertia;
-        Shape->calculateLocalInertia(DIVIDER_MASS, LocalInertia);
-        btRigidBody* RigidBody = new btRigidBody(DIVIDER_MASS, ms, Shape, LocalInertia);
+        Shape->calculateLocalInertia(BOARD_MASS, LocalInertia);
+        btRigidBody* RigidBody = new btRigidBody(BOARD_MASS, ms, Shape, LocalInertia);
 
         // Store a pointer to the Ogre Node so we can update it later
         RigidBody->setUserPointer((void*)(baseBoardNode_));
 
         // Add it to the physics world
         dynamicsWorld_->addRigidBody(RigidBody);
+
+        // Disable baseboard gravity
         RigidBody->setGravity(btVector3(0, 0, 0));
-        //collisionShapes.push_back(Shape);
+
         ActiveCollidables_->registerMiscCollidable(baseBoard, RigidBody, Shape);
 
+        // Create board dividers
         constructDivider(mSceneMgr, Vector3(0, 0, OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
         constructDivider(mSceneMgr, Vector3(0, 0, -OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
         constructDivider(mSceneMgr, Vector3(0, OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
@@ -77,7 +82,7 @@ private:
 	const int OFFSET = 20;
     const Vector3 VERTICAL_SCALE = Vector3(0.2, 1, 0.3);
     const Vector3 HORIZONTAL_SCALE = Vector3(0.2, 0.3, 1);
-    const int DIVIDER_MASS = MAXINT;
+    const int BOARD_MASS = MAXINT;
     SceneManager* mSceneMgr_;
     btDiscreteDynamicsWorld* dynamicsWorld_;
     ActiveCollidables* ActiveCollidables_;

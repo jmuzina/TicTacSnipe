@@ -10,35 +10,11 @@
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 
-void TicTacSnipeApplication::loadMesh(String source, String name) {    
-    FILE* pFile = fopen(source.c_str(), "rb");
-    if (!pFile)
-        OGRE_EXCEPT(Exception::ERR_FILE_NOT_FOUND, "File " + source + " not found.", "OgreMeshLoaded");
-
-    struct stat tagStat;
-    stat(source.c_str(), &tagStat);
-    MemoryDataStream* memstream = new MemoryDataStream(source, tagStat.st_size, true);
-    fread((void*)memstream->getPtr(), tagStat.st_size, 1, pFile);
-    fclose(pFile);
-
-    // give the resource a name -- it can be the full pathname if you like, since it's 
-    // just going to be the key in an STL associative tree container
-    MeshPtr pMesh = MeshManager::getSingleton().createManual(name, ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
-
-    // this part does the actual load into the live Mesh object created above
-    MeshSerializer meshSerializer;
-    DataStreamPtr stream(memstream);
-    meshSerializer.importMesh(stream, pMesh.getPointer());
-
-    // and finally, now that we have a named Mesh resource, we can use it
-    // in our createEntity() call...
-    //Entity* pF35_1 = m_pSceneMgr->createEntity("LocalMesh_Ent", "LocalMesh");
-}
-
 TicTacSnipeApplication::TicTacSnipeApplication()
     :
-    cameraSpawnPoint(Ogre::Vector3(2623, 500, 750)),
-    cameraLookPoint(Ogre::Vector3(2253, 250, 1210))
+    cameraSpawnPoint(Ogre::Vector3(2224, 212, 462)),
+    cameraLookPoint(Ogre::Vector3(2228, 170, 806)),
+    debugLabel(0)
 {
 }
 
@@ -126,8 +102,7 @@ void TicTacSnipeApplication::createScene()
 
     mTerrainGroup->freeTemporaryResources();
     CreateBulletSim();
-    TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(0,0,0,1), Vector3(0.2, 1, 1));
-    
+    TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(1,0,1,0), Vector3(0.2, 1, 1));
 }
 
 void TicTacSnipeApplication::configureTerrainDefaults(Ogre::Light* light)
@@ -226,7 +201,7 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
 bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id) {
     const Ogre::Vector3 camPos = mCamera->getPosition();
 
-    CreateBullet(btVector3(camPos.x, camPos.y, camPos.z), 1.0f, btVector3(0.02, 0.02, 0.02), "Bullet");
+    CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z));
     return true;
 }
 
@@ -234,6 +209,8 @@ bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::Mouse
 void TicTacSnipeApplication::createFrameListener()
 {
     BaseApplication::createFrameListener();
+    debugLabel = mTrayMgr->createLabel(OgreBites::TL_BOTTOMRIGHT, "CamPos", "", 350);
+    debugLabel->show();
 }
 
 bool TicTacSnipeApplication::frameStarted(const Ogre::FrameEvent& evt)
@@ -252,6 +229,9 @@ void TicTacSnipeApplication::destroyScene()
 bool TicTacSnipeApplication::frameRenderingQueued(const Ogre::FrameEvent& fe)
 {
     bool ret = BaseApplication::frameRenderingQueued(fe);
+    const Quaternion orientation = mCamera->getOrientation();
+    //debugLabel->setCaption("Orientation: " + std::to_string(orientation.x) + ", " + std::to_string(orientation.y) + ", " + std::to_string(orientation.z));
+    debugLabel->setCaption("CamPos: " + std::to_string(static_cast<int>(std::ceil(mCamera->getPosition().x))) + ", " + std::to_string(static_cast<int>(std::ceil(mCamera->getPosition().y))) + ", " + std::to_string(static_cast<int>(std::ceil(mCamera->getPosition().z))));
 
     return ret;
 }
@@ -271,59 +251,58 @@ void TicTacSnipeApplication::CreateBulletSim(void) {
 
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
     dynamicsWorld->setGravity(btVector3(0, -100, 0));
-    {
-        ///create a few basic rigid bodies
-        // start with ground plane, 1500, 1500
-        Ogre::Terrain* pTerrain = mTerrainGroup->getTerrain(0, 0);
-        float* terrainHeightData = pTerrain->getHeightData();
-        Ogre::Vector3 terrainPosition = pTerrain->getPosition();
-        float* pDataConvert = new float[pTerrain->getSize() * pTerrain->getSize()];
-        for (int i = 0; i < pTerrain->getSize(); i++)
-            memcpy(
-                pDataConvert + pTerrain->getSize() * i, // source
-                terrainHeightData + pTerrain->getSize() * (pTerrain->getSize() - i - 1), // target
-                sizeof(float) * (pTerrain->getSize()) // size
-            );
 
-        float metersBetweenVertices = pTerrain->getWorldSize() / (pTerrain->getSize() - 1); //edit: fixed 0 -> 1 on 2010-08-13
-        btVector3 localScaling(metersBetweenVertices, 1, metersBetweenVertices);
+    ///create a few basic rigid bodies
+    // start with ground plane, 1500, 1500
+    Ogre::Terrain* pTerrain = mTerrainGroup->getTerrain(0, 0);
+    float* terrainHeightData = pTerrain->getHeightData();
+    Ogre::Vector3 terrainPosition = pTerrain->getPosition();
+    float* pDataConvert = new float[pTerrain->getSize() * pTerrain->getSize()];
+    for (int i = 0; i < pTerrain->getSize(); i++)
+        memcpy(
+            pDataConvert + pTerrain->getSize() * i, // source
+            terrainHeightData + pTerrain->getSize() * (pTerrain->getSize() - i - 1), // target
+            sizeof(float) * (pTerrain->getSize()) // size
+        );
 
-        btHeightfieldTerrainShape* groundShape = new btHeightfieldTerrainShape(
-            pTerrain->getSize(),
-            pTerrain->getSize(),
-            pDataConvert,
-            1/*ignore*/,
-            pTerrain->getMinHeight(),
-            pTerrain->getMaxHeight(),
-            1,
-            PHY_FLOAT,
-            true);
+    float metersBetweenVertices = pTerrain->getWorldSize() / (pTerrain->getSize() - 1); //edit: fixed 0 -> 1 on 2010-08-13
+    btVector3 localScaling(metersBetweenVertices, 1, metersBetweenVertices);
 
-        groundShape->setUseDiamondSubdivision(true);
-        groundShape->setLocalScaling(localScaling);
+    btHeightfieldTerrainShape* groundShape = new btHeightfieldTerrainShape(
+        pTerrain->getSize(),
+        pTerrain->getSize(),
+        pDataConvert,
+        1/*ignore*/,
+        pTerrain->getMinHeight(),
+        pTerrain->getMaxHeight(),
+        1,
+        PHY_FLOAT,
+        true);
 
-        btRigidBody* mGroundBody = new btRigidBody(0, new btDefaultMotionState(), groundShape);
+    groundShape->setUseDiamondSubdivision(true);
+    groundShape->setLocalScaling(localScaling);
 
-        mGroundBody->getWorldTransform().setOrigin(
-            btVector3(
-                terrainPosition.x,
-                terrainPosition.y + (pTerrain->getMaxHeight() - pTerrain->getMinHeight()) / 2,
-                terrainPosition.z));
+    mGroundBody = new btRigidBody(0, new btDefaultMotionState(), groundShape);
 
-        mGroundBody->getWorldTransform().setRotation(
-            btQuaternion(
-                Ogre::Quaternion::IDENTITY.x,
-                Ogre::Quaternion::IDENTITY.y,
-                Ogre::Quaternion::IDENTITY.z,
-                Ogre::Quaternion::IDENTITY.w));
+    mGroundBody->getWorldTransform().setOrigin(
+        btVector3(
+            terrainPosition.x,
+            terrainPosition.y + (pTerrain->getMaxHeight() - pTerrain->getMinHeight()) / 2,
+            terrainPosition.z));
 
-        dynamicsWorld->addRigidBody(mGroundBody);
-        collisionShapes.push_back(groundShape);
-        ActiveCollidables_ = new ActiveCollidables(dynamicsWorld);
-    }
+    mGroundBody->getWorldTransform().setRotation(
+        btQuaternion(
+            Ogre::Quaternion::IDENTITY.x,
+            Ogre::Quaternion::IDENTITY.y,
+            Ogre::Quaternion::IDENTITY.z,
+            Ogre::Quaternion::IDENTITY.w));
+
+    dynamicsWorld->addRigidBody(mGroundBody);
+    collisionShapes.push_back(groundShape);
+    ActiveCollidables_ = new ActiveCollidables(dynamicsWorld);
 }
 
-void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon, btScalar Mass, const btVector3& scale, char* name) {
+void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon) {
     // empty ogre vectors for the cubes size and position
     Ogre::Vector3 size = Ogre::Vector3::ZERO;
     Ogre::Vector3 pos = Ogre::Vector3::ZERO;
@@ -339,11 +318,11 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon, 
     boxentity->setCastShadows(true);
     boxNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     boxNode->attachObject(boxentity);
-    boxNode->scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
+    boxNode->scale(Ogre::Vector3(BULLET_SIZE.getX(), BULLET_SIZE.getY(), BULLET_SIZE.getZ()));
 
     Ogre::AxisAlignedBox boundingB = boxentity->getBoundingBox();
 
-    boundingB.scale(Ogre::Vector3(scale.getX(), scale.getY(), scale.getZ()));
+    boundingB.scale(Ogre::Vector3(BULLET_SIZE.getX(), BULLET_SIZE.getY(), BULLET_SIZE.getZ()));
     size = boundingB.getSize() * 0.95f;
     btTransform Transform;
     Transform.setIdentity();
@@ -353,8 +332,8 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon, 
     btVector3 HalfExtents(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f);
     btCollisionShape* Shape = new btBoxShape(HalfExtents);
     btVector3 LocalInertia;
-    Shape->calculateLocalInertia(Mass, LocalInertia);
-    btRigidBody* RigidBody = new btRigidBody(Mass, ms, Shape, LocalInertia);
+    Shape->calculateLocalInertia(BULLET_MASS, LocalInertia);
+    btRigidBody* RigidBody = new btRigidBody(BULLET_MASS, ms, Shape, LocalInertia);
 
     // Store a pointer to the Ogre Node so we can update it later
     RigidBody->setUserPointer((void*)(boxNode));
@@ -363,6 +342,12 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon, 
     dynamicsWorld->addRigidBody(RigidBody);
     collisionShapes.push_back(Shape);
     ActiveCollidables_->registerBullet(boxentity, RigidBody, Shape);
+
+    const Vector3 forward = getForwardAngle();
+    const btVector3 btForward = btVector3(forward.x, forward.y, forward.z);
+
+    RigidBody->applyImpulse(btForward * BULLET_FORCE, btVector3(0, 0, 0));
+    RigidBody->applyTorqueImpulse(btForward * BULLET_SPAWN_Y_OFFSET);
 }
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img)

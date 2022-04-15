@@ -6,8 +6,8 @@
 #include <Terrain/OgreTerrain.h>
 #include <Terrain/OgreTerrainGroup.h>
 #include "OgreManualObject.h"
-#include "../../bullet-2.82/src/btBulletDynamicsCommon.h"
-#include "../../bullet-2.82/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include "bullet-2.82/src/btBulletDynamicsCommon.h"
+#include "bullet-2.82/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "BaseApplication.h"
 #include <queue>
 #include "Collidable.h"
@@ -25,7 +25,7 @@ protected:
 	virtual void createScene();
 	virtual void createFrameListener();
 	virtual void destroyScene();
-	void CreateBullet(const btVector3& collidablePosititon, btScalar Mass, const btVector3& scale, char* name);
+	void CreateBullet(const btVector3& collidablePosititon);
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& fe);
 	bool frameStarted(const Ogre::FrameEvent& evt);
 	bool mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id);
@@ -35,7 +35,9 @@ private:
 	void configureTerrainDefaults(Ogre::Light*);
 	void defineTerrain(long x, long y);
 	void initBlendMaps(Ogre::Terrain* terrain);
-	void loadMesh(String, String);
+	Vector3 getForwardAngle() const {
+		return mCamera->getOrientation() * Vector3(0, 0, -1);
+	}
 	btDefaultCollisionConfiguration* collisionConfiguration;
 	btCollisionDispatcher* dispatcher;
 	btBroadphaseInterface* overlappingPairCache;
@@ -43,6 +45,7 @@ private:
 	btDiscreteDynamicsWorld* dynamicsWorld;
 	btCollisionShape* groundShape;
 	btAlignedObjectArray<btCollisionShape*> collisionShapes;
+	btRigidBody* mGroundBody;
 
 	bool mTerrainsImported;
 	Ogre::TerrainGlobalOptions* mTerrainGlobals;
@@ -51,6 +54,14 @@ private:
 	Ogre::TerrainGroup* mTerrainGroup;
 	ActiveCollidables* ActiveCollidables_;
 	std::vector<TicTacToeBoard*> boards_ = std::vector<TicTacToeBoard*>();
+
+	OgreBites::Label* debugLabel;
+
+	const int BULLET_FORCE = 800;
+	const btVector3 BULLET_SIZE = btVector3(0.03, 0.03, 0.03);
+	const btScalar BULLET_MASS = 1.25;
+	const int BULLET_SPIN = 2000;
+	const float BULLET_SPAWN_Y_OFFSET = -5;
 };
 
 #endif

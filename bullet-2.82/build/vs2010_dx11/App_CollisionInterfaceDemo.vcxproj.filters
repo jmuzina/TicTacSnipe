@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Demos">
+      <UniqueIdentifier>{6D11EEAB-960E-FF47-8C55-7873DE6EA0FA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Demos\CollisionInterfaceDemo">
+      <UniqueIdentifier>{284F15C4-746C-0B4E-A6FE-C82E7A7C81E0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Demos\CollisionInterfaceDemo\CollisionInterfaceDemo.h">
+      <Filter>Demos\CollisionInterfaceDemo</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Demos\CollisionInterfaceDemo\CollisionInterfaceDemo.cpp">
+      <Filter>Demos\CollisionInterfaceDemo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Demos\CollisionInterfaceDemo\main.cpp">
+      <Filter>Demos\CollisionInterfaceDemo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Demos\CollisionInterfaceDemo\Win32CollisionInterfaceDemo.cpp">
+      <Filter>Demos\CollisionInterfaceDemo</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\bullet.rc" />
+  </ItemGroup>
+</Project>
