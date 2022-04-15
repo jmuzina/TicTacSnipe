@@ -61,22 +61,23 @@ public:
         ActiveCollidables_->registerMiscCollidable(baseBoard, RigidBody, Shape);
 
         // Create board dividers
-        constructDivider(mSceneMgr, Vector3(0, 0, OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
-        constructDivider(mSceneMgr, Vector3(0, 0, -OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
-        constructDivider(mSceneMgr, Vector3(0, OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
-        constructDivider(mSceneMgr, Vector3(0, -OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
+        constructDivider(Vector3(0, 0, OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
+        constructDivider(Vector3(0, 0, -OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
+        constructDivider(Vector3(0, OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
+        constructDivider(Vector3(0, -OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
 	}
 
 private:
-    void constructDivider(SceneManager* mSceneMgr, Vector3 spawnPosition, Vector3 spawnRotation, Vector3 scale) {
+    void constructDivider(Vector3 spawnPosition, Vector3 spawnRotation, Vector3 scale) {
         SceneNode* childBoardNode = baseBoardNode_->createChildSceneNode();
-        Entity* board = mSceneMgr->createEntity("cube.mesh");
+        Entity* board = mSceneMgr_->createEntity("cube.mesh");
         childBoardNode->attachObject(board);
         childBoardNode->setScale(scale);
         childBoardNode->setPosition(spawnPosition);
         childBoardNode->rotate(spawnRotation, Ogre::Degree(90));
         boards_.push_back(childBoardNode);
     };
+    
 	std::vector<SceneNode*> boards_ = std::vector<SceneNode*>();
 	SceneNode* baseBoardNode_;
 	const int OFFSET = 20;
