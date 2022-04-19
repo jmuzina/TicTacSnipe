@@ -201,7 +201,50 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
 bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id) {
     const Ogre::Vector3 camPos = mCamera->getPosition();
 
-    CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z));
+    switch (id) {
+    case OIS::MB_Left:
+    {
+        //creates a bullet if left click
+        CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z));
+        break;
+    }
+
+    case OIS::MB_Right:
+    {
+        //zooms camera 3x when holding right click
+        mCamera->setFOVy(mCamera->getFOVy() / Camera_Zoom);
+        break;
+    }
+    break;
+
+    default:
+        break;
+    }
+
+    return true;
+}
+
+bool TicTacSnipeApplication::mouseReleased(const OIS::MouseEvent& arg, OIS::MouseButtonID id)
+{
+    switch (id) {
+    case OIS::MB_Left:
+    {
+
+        break;
+    }
+
+    case OIS::MB_Right:
+    {
+        //return camera back to original 'zoom' after releasing right mouse button
+        mCamera->setFOVy(mCamera->getFOVy() * Camera_Zoom);
+        break;
+    }
+    break;
+
+    default:
+        break;
+    }
+
     return true;
 }
 

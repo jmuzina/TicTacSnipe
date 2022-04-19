@@ -29,6 +29,7 @@ protected:
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& fe);
 	bool frameStarted(const Ogre::FrameEvent& evt);
 	bool mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id);
+	bool mouseReleased(const OIS::MouseEvent& arg, OIS::MouseButtonID id);
 
 private:
 	void CreateBulletSim(void); 
@@ -62,6 +63,7 @@ private:
 	const btScalar BULLET_MASS = 1.25;
 	const int BULLET_SPIN = 2000;
 	const float BULLET_SPAWN_Y_OFFSET = -5;
+	const Ogre::Real Camera_Zoom = 3;
 };
 
 #endif
