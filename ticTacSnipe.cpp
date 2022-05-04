@@ -1,12 +1,91 @@
 // Tic Tac Snipe Main game script
 // Anthony Moore & Joe Muzina
-// Credit: Tutorial 2_9/3_9 from Alfred Shaker for environment setup, flat plane/light, BaseApplication
-// basic flat grassy plane with a light.
+// Credit: Tutorial 2_9/3_9 from Alfred Shaker for environment setup, light, BaseApplication, as well as CEGUI and Bullet tutorials
 // Camera movement is locked.
 
 #include "ticTacSnipe.h"
 #include "MotionState.h"
 #include "Collidable.h"
+
+Collidable* checkBullet = nullptr;
+Collidable* checkBlock = nullptr;
+bool spaceWasHit = false;
+const String BASE_COLOR = "BaseWhite";
+
+std::map<int, Vector4> playerColors = {
+        { 0, Vector4(1, 0, 0, 0) },
+        { 1, Vector4(0,0,1,0) }
+};
+
+Ogre::MaterialPtr red = Ogre::MaterialPtr();
+Ogre::MaterialPtr blue = Ogre::MaterialPtr();
+
+void setColor(Ogre::Entity* ent, Vector4 color) {
+    if (color != Vector4::ZERO) {
+        for (int i = 0; i < ent->getNumSubEntities(); ++i) {
+            Ogre::SubEntity* subEntity = ent->getSubEntity(i);
+            subEntity->setMaterialName(BASE_COLOR);
+            
+            if (color == Vector4(1, 0, 0, 0)) {
+                if (red == Ogre::MaterialPtr()) {
+                    auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
+                    material_->setDiffuse(color.x, color.y, color.z, color.w);
+                    material_->setSpecular(color.x, color.y, color.z, color.w);
+                    subEntity->setMaterialName(material_->getName());
+                    red = material_;
+                }
+                else {
+                    subEntity->setMaterialName(red.get()->getName());
+                }
+            }
+            else if (color == Vector4(0, 0, 1, 0)) {
+                if (blue == Ogre::MaterialPtr()) {
+                    auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
+                    material_->setDiffuse(color.x, color.y, color.z, color.w);
+                    material_->setSpecular(color.x, color.y, color.z, color.w);
+                    subEntity->setMaterialName(material_->getName());
+                    blue = material_;
+                }
+                else {
+                    subEntity->setMaterialName(blue.get()->getName());
+                }
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < ent->getNumSubEntities(); ++i) {
+            Ogre::SubEntity* subEntity = ent->getSubEntity(i);
+            subEntity->setMaterialName(BASE_COLOR);
+        }
+    }
+}
+
+// Allow overwrite of default object collision behavior
+// Credit: https://stackoverflow.com/questions/20300615/bullet-collision-callback-between-2-bodies
+struct MyContactResultCallback : public btCollisionWorld::ContactResultCallback
+{
+    btScalar addSingleResult(btManifoldPoint& cp,
+        const btCollisionObjectWrapper* colObj0Wrap,
+        int partId0,
+        int index0,
+        const btCollisionObjectWrapper* colObj1Wrap,
+        int partId1,
+        int index1)
+    {
+        if ((checkBullet != nullptr) && (checkBlock != nullptr)) {
+            // Block was not hit by this bullet
+            // If this isn't checked, the same bullet may "strike" the same block twice
+            if (!checkBlock->alreadyHitBy(checkBullet)) {
+                checkBlock->markHit(checkBullet);
+                setColor(checkBlock->getEntity(), playerColors.find(checkBullet->getOwnerId())->second);
+                checkBullet->markForDeletion();
+                spaceWasHit = true;
+            }
+        }
+
+        return true;
+    }
+};
 
 void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 
@@ -103,6 +182,7 @@ void TicTacSnipeApplication::createScene()
     mTerrainGroup->freeTemporaryResources();
     CreateBulletSim();
     TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(1,0,1,0), Vector3(0.2, 1, 1));
+    boards_.push_back(board);
 }
 
 void TicTacSnipeApplication::configureTerrainDefaults(Ogre::Light* light)
@@ -201,7 +281,9 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
 bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id) {
     const Ogre::Vector3 camPos = mCamera->getPosition();
 
-    CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z));
+    const int playerId = (id == OIS::MouseButtonID(0) ? 0 : 1);
+
+    CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z), playerId);
     return true;
 }
 
@@ -215,7 +297,60 @@ void TicTacSnipeApplication::createFrameListener()
 
 bool TicTacSnipeApplication::frameStarted(const Ogre::FrameEvent& evt)
 {
-    dynamicsWorld->stepSimulation(evt.timeSinceLastFrame);
+    if (boards_.size() > 0) {
+        ActiveCollidables_->pruneAll(evt.timeSinceLastFrame);
+        dynamicsWorld->stepSimulation(evt.timeSinceLastFrame);
+
+        const btCollisionObjectArray colliders = dynamicsWorld->getCollisionObjectArray();
+        for (int i = 0; i < colliders.size(); i++) {
+            btCollisionObject* objA = colliders[i];
+            btRigidBody* bodyA = btRigidBody::upcast(objA);
+
+            if (bodyA && bodyA->getMotionState()) {
+                btTransform trans;
+                bodyA->getMotionState()->getWorldTransform(trans);
+
+                void* userPointer = bodyA->getUserPointer();
+                if (userPointer) {
+                    btQuaternion orientation = trans.getRotation();
+                    Ogre::SceneNode* sceneNode = static_cast<Ogre::SceneNode*>(userPointer);
+                    checkBullet = ActiveCollidables_->getFromRigidBody(bodyA);
+                    if (checkBullet->isBullet()) {
+                        // check each other collider object
+                        for (int j = 0; j < colliders.size(); ++j) {
+                            if (i == j) continue; // ignore identical colliders
+
+                            btCollisionObject* objB = colliders[j];
+                            btRigidBody* bodyB = btRigidBody::upcast(objB);
+                            checkBlock = ActiveCollidables_->getFromRigidBody(bodyB);
+
+                            // If object A is a bullet and object B is a block, check if they collide.
+                            if ((checkBullet != checkBlock) && (checkBlock != nullptr) && (!checkBlock->isBullet())) {
+                                // callback will be called if A and B collide.
+                                MyContactResultCallback callback;
+                                dynamicsWorld->contactPairTest(bodyA, bodyB, callback);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (spaceWasHit) {
+            spaceWasHit = false;
+            for (int boardNum = 0; boardNum < boards_.size(); ++boardNum) {
+                const TicTacToeBoard* board = boards_[boardNum];
+                const int winner = board->getWinner();
+                if (winner != -1) {
+                    const std::vector<BoardSpace*> spaces = board->getSpaces();
+                    for (int spaceNum = 0; spaceNum < spaces.size(); ++spaceNum) {
+                        const BoardSpace* space = spaces[spaceNum];
+                        space->getCollidable()->clearHit();
+                        setColor(space->getCollidable()->getEntity(), Vector4::ZERO);
+                    }
+                }
+            }
+        }
+    }
     return true;
 }
 
@@ -302,20 +437,21 @@ void TicTacSnipeApplication::CreateBulletSim(void) {
     ActiveCollidables_ = new ActiveCollidables(dynamicsWorld);
 }
 
-void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon) {
+void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosition, int playerId) {
     // empty ogre vectors for the cubes size and position
     Ogre::Vector3 size = Ogre::Vector3::ZERO;
     Ogre::Vector3 pos = Ogre::Vector3::ZERO;
     Ogre::SceneNode* boxNode;
     Ogre::Entity* boxentity;
     // Convert the bullet physics vector to the ogre vector
-    pos.x = collidablePosititon.getX();
-    pos.y = collidablePosititon.getY();
-    pos.z = collidablePosititon.getZ();
-    boxentity = mSceneMgr->createEntity("cube.mesh");
+    pos.x = collidablePosition.getX();
+    pos.y = collidablePosition.getY();
+    pos.z = collidablePosition.getZ();
+    boxentity = mSceneMgr->createEntity("sphere.mesh");
     
     //boxentity->setScale(Vector3(scale.x,scale.y,scale.z));
     boxentity->setCastShadows(true);
+
     boxNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
     boxNode->attachObject(boxentity);
     boxNode->scale(Ogre::Vector3(BULLET_SIZE.getX(), BULLET_SIZE.getY(), BULLET_SIZE.getZ()));
@@ -326,7 +462,7 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon) 
     size = boundingB.getSize() * 0.95f;
     btTransform Transform;
     Transform.setIdentity();
-    Transform.setOrigin(collidablePosititon);
+    Transform.setOrigin(collidablePosition);
     MotionState* ms = new MotionState(Transform, boxNode);
 
     btVector3 HalfExtents(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f);
@@ -341,7 +477,7 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosititon) 
     // Add it to the physics world
     dynamicsWorld->addRigidBody(RigidBody);
     collisionShapes.push_back(Shape);
-    ActiveCollidables_->registerBullet(boxentity, RigidBody, Shape);
+    Collidable* createdBullet = ActiveCollidables_->registerCollidable(boxentity, RigidBody, Shape, playerId, playerColors.find(playerId)->second);
 
     const Vector3 forward = getForwardAngle();
     const btVector3 btForward = btVector3(forward.x, forward.y, forward.z);

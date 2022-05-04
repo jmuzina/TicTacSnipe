@@ -94,7 +94,7 @@ void BaseApplication::createCamera(void)
     // Create the camera
     mCamera = mSceneMgr->createCamera("PlayerCam");
 
-    // collidablePosititon it at 500 in Z direction
+    // collidablePosition it at 500 in Z direction
     mCamera->setPosition(Ogre::Vector3(0, 0, 80));
     // Look back along -Z
     mCamera->lookAt(Ogre::Vector3(0, 0, -300));
@@ -394,13 +394,13 @@ bool BaseApplication::keyPressed(const OIS::KeyEvent& arg)
         mShutDown = true;
     }
 
-    //mCameraMan->injectKeyDown(arg);  // allows camera to move with keypresses
+    // mCameraMan->injectKeyDown(arg);  // allows camera to move with keypresses
     return true;
 }
 //---------------------------------------------------------------------------
 bool BaseApplication::keyReleased(const OIS::KeyEvent& arg)
 {
-    //mCameraMan->injectKeyUp(arg); // allows camera to stop moving once key has been pressed causing it to move
+    // mCameraMan->injectKeyUp(arg); // allows camera to stop moving once key has been pressed causing it to move
     return true;
 }
 //---------------------------------------------------------------------------

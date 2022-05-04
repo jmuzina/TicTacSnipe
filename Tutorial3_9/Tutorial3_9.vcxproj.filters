@@ -41,5 +41,8 @@
     <ClInclude Include="..\ActiveCollidables.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\boardSpace.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

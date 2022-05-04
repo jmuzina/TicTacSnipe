@@ -6,8 +6,8 @@
 #include <Terrain/OgreTerrain.h>
 #include <Terrain/OgreTerrainGroup.h>
 #include "OgreManualObject.h"
-#include "bullet-2.82/src/btBulletDynamicsCommon.h"
-#include "bullet-2.82/src/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include <btBulletDynamicsCommon.h>
+#include <btHeightfieldTerrainShape.h>
 #include "BaseApplication.h"
 #include <queue>
 #include "Collidable.h"
@@ -25,7 +25,7 @@ protected:
 	virtual void createScene();
 	virtual void createFrameListener();
 	virtual void destroyScene();
-	void CreateBullet(const btVector3& collidablePosititon);
+	void CreateBullet(const btVector3& collidablePosition, int playerId);
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& fe);
 	bool frameStarted(const Ogre::FrameEvent& evt);
 	bool mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id);

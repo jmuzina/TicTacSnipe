@@ -96,7 +96,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_LIB);$(OGRE_LIBS9)/debug;$(BULLET_LIBS);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_LIB);$(OGRE_LIBS9)/debug;$(BULLET_LIBS);$(BULLET_INCLUDE);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OgreMain_d.lib;OgreOverlay_d.lib;OIS_d.lib;OgreTerrain_d.lib;BulletCollision_vs2010_debug.lib;BulletDynamics_vs2010_debug.lib;BulletSoftBody_vs2010_debug.lib;ConvexDecomposition_vs2010_debug.lib;BulletSoftBodyDX11Solvers_vs2010_debug.lib;HACD_vs2010_debug.lib;LinearMath_vs2010_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="..\ActiveCollidables.h" />
     <ClInclude Include="..\BaseApplication.h" />
+    <ClInclude Include="..\boardSpace.h" />
     <ClInclude Include="..\Collidable.h" />
     <ClInclude Include="..\MotionState.h" />
     <ClInclude Include="..\ticTacSnipe.h" />
