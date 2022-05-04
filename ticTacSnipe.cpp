@@ -295,6 +295,27 @@ void TicTacSnipeApplication::createFrameListener()
     debugLabel->show();
 }
 
+void TicTacSnipeApplication::checkForWinner() {
+    spaceWasHit = false;
+
+    // Check all boards for whether a player has won them
+    for (int boardNum = 0; boardNum < boards_.size(); ++boardNum) {
+        const TicTacToeBoard* board = boards_[boardNum];
+        const int winner = board->getWinner();
+
+        // A player has won on this board
+        if (winner != -1) {
+            const std::vector<BoardSpace*> spaces = board->getSpaces();
+            // Reset all board pieces on this board
+            for (int spaceNum = 0; spaceNum < spaces.size(); ++spaceNum) {
+                const BoardSpace* space = spaces[spaceNum];
+                space->getCollidable()->clearHit();
+                setColor(space->getCollidable()->getEntity(), Vector4::ZERO);
+            }
+        }
+    }
+}
+
 bool TicTacSnipeApplication::frameStarted(const Ogre::FrameEvent& evt)
 {
     if (boards_.size() > 0) {
@@ -335,21 +356,8 @@ bool TicTacSnipeApplication::frameStarted(const Ogre::FrameEvent& evt)
                 }
             }
         }
-        if (spaceWasHit) {
-            spaceWasHit = false;
-            for (int boardNum = 0; boardNum < boards_.size(); ++boardNum) {
-                const TicTacToeBoard* board = boards_[boardNum];
-                const int winner = board->getWinner();
-                if (winner != -1) {
-                    const std::vector<BoardSpace*> spaces = board->getSpaces();
-                    for (int spaceNum = 0; spaceNum < spaces.size(); ++spaceNum) {
-                        const BoardSpace* space = spaces[spaceNum];
-                        space->getCollidable()->clearHit();
-                        setColor(space->getCollidable()->getEntity(), Vector4::ZERO);
-                    }
-                }
-            }
-        }
+        // Check whether a space has been hit, and handle it if so
+        if (spaceWasHit) checkForWinner();
     }
     return true;
 }
