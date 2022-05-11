@@ -25,12 +25,13 @@ Ogre::MaterialPtr blue = Ogre::MaterialPtr();
 Ogre::MaterialPtr grey = Ogre::MaterialPtr();
 
 void setColor(Ogre::Entity* ent, Vector4 color) {
-    if (color != Vector4::ZERO) {
+    if (color != Vector4::ZERO) { // handle provided colors other than empty
         for (int i = 0; i < ent->getNumSubEntities(); ++i) {
             Ogre::SubEntity* subEntity = ent->getSubEntity(i);
             subEntity->setMaterialName(BASE_COLOR);
 
             if (color == redVec) {
+                // red material has not been created and cached yet; cache it
                 if (red == Ogre::MaterialPtr()) {
                     auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
                     material_->setDiffuse(color.x, color.y, color.z, color.w);
@@ -38,11 +39,13 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
                     subEntity->setMaterialName(material_->getName());
                     red = material_;
                 }
+                // set material to cached red material
                 else {
                     subEntity->setMaterialName(red.get()->getName());
                 }
             }
             else if (color == blueVec) {
+                // blue material has not been created and cached yet; cache it
                 if (blue == Ogre::MaterialPtr()) {
                     auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
                     material_->setDiffuse(color.x, color.y, color.z, color.w);
@@ -50,11 +53,13 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
                     subEntity->setMaterialName(material_->getName());
                     blue = material_;
                 }
+                // set material to cached blue material
                 else {
                     subEntity->setMaterialName(blue.get()->getName());
                 }
             }
             else if (color == greyVec) {
+                // grey material has not been created and cached yet; cache it
                 if (grey == Ogre::MaterialPtr()) {
                     auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
                     material_->setDiffuse(color.x, color.y, color.z, color.w);
@@ -62,13 +67,14 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
                     subEntity->setMaterialName(material_->getName());
                     grey = material_;
                 }
+                // set material to cached grey material
                 else {
                     subEntity->setMaterialName(grey.get()->getName());
                 }
             }
         }
     }
-    else {
+    else { // set zero-vector colors to the specified BASE_COLOR
         for (int i = 0; i < ent->getNumSubEntities(); ++i) {
             Ogre::SubEntity* subEntity = ent->getSubEntity(i);
             subEntity->setMaterialName(BASE_COLOR);
@@ -78,7 +84,7 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
 
 // Allow overwrite of default object collision behavior
 // Credit: https://stackoverflow.com/questions/20300615/bullet-collision-callback-between-2-bodies
-struct MyContactResultCallback : public btCollisionWorld::ContactResultCallback
+struct BulletCollisionCallback : public btCollisionWorld::ContactResultCallback
 {
     btScalar addSingleResult(btManifoldPoint& cp,
         const btCollisionObjectWrapper* colObj0Wrap,
@@ -89,16 +95,21 @@ struct MyContactResultCallback : public btCollisionWorld::ContactResultCallback
         int index1)
     {
         if ((checkBullet != nullptr) && (checkBlock != nullptr)) {
-            // Block was not hit by this bullet
-            // If this isn't checked, the same bullet may "strike" the same block twice
+            // Valid collision if:
+            // // this block has not already been hit by this bullet
+            // // this block has not been hit by another bullet
+            // // the bullet is not marked for deletion (it has already hit another block)
             if (!checkBlock->alreadyHitBy(checkBullet) && (checkBlock->getOwnerId() == -1) && (!checkBullet->isMarkedForDeletion())) {
+                // Mark the block as being hit
                 checkBlock->markHit(checkBullet);
+                // Set block to the color of the player who hit it
                 setColor(checkBlock->getEntity(), playerColors.find(checkBullet->getOwnerId())->second);
+                // Set bullet to be deleted on next frame and not hit any more blocks in the meantime
                 checkBullet->markForDeletion();
+                // Set space hit flag; checked in frameStarted(). When this flag is true, the board is checked to see if it is in a win-state.
                 spaceWasHit = true;
             }
         }
-
         return true;
     }
 };
@@ -163,28 +174,6 @@ void TicTacSnipeApplication::createScene()
     else
         mCamera->setFarClipDistance(50000);
 
-    /*
-    Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
-
-    Ogre::MeshManager::getSingleton().createPlane(
-        "ground",
-        Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-        plane,
-        5000, 5000, 20, 20,
-        true,
-        1, 5, 5,
-        Ogre::Vector3::UNIT_Z);
-
-    Ogre::Entity* groundEntity = mSceneMgr->createEntity("ground");
-
-    mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(groundEntity);
-
-    groundEntity->setCastShadows(false);
-
-    // Materials found in env\Ogre10\sdk\media\materials\scripts\Examples.material
-    groundEntity->setMaterialName("Examples/GrassFloor");
-    */
-
     // Lighting
     mSceneMgr->setAmbientLight(Ogre::ColourValue(.4, .4, .4));
 
@@ -227,7 +216,11 @@ void TicTacSnipeApplication::createScene()
     }
 
     mTerrainGroup->freeTemporaryResources();
+
+    // Tic Tac Toe Board Setup // 
+
     CreateBulletSim();
+    // Create a tic-tac-toe board at the camera look point
     TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(1, 0, 1, 0), Vector3(0.2, 1, 1));
     boards_.push_back(board);
 
@@ -287,7 +280,6 @@ void TicTacSnipeApplication::createScene()
     VLine->setPosition(CEGUI::UVector2(CEGUI::UDim(0.2, 0), CEGUI::UDim(0, 0)));
     VLine->setSize(CEGUI::USize(CEGUI::UDim(0.003, 0), CEGUI::UDim(0.4, 0)));
     VLine->getProperty("CurrentProgress").append("1.0");
-
 
     Crosshair->addChild(VLine);
     Crosshair->addChild(HLine);
@@ -392,7 +384,6 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
     blendMap1->dirty();
     blendMap0->update();
     blendMap1->update();
-
 }
 
 bool TicTacSnipeApplication::mouseMoved(const OIS::MouseEvent& arg) {
@@ -406,8 +397,6 @@ bool TicTacSnipeApplication::mouseMoved(const OIS::MouseEvent& arg) {
 
     }
 
-    //already here
-    if (mTrayMgr->injectMouseMove(arg)) return true;
     mCameraMan->injectMouseMove(arg);
     return true;
 }
@@ -429,26 +418,31 @@ bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::Mouse
 }
 
 bool TicTacSnipeApplication::mouseReleased(const OIS::MouseEvent& arg, OIS::MouseButtonID id) {
-
     CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseButtonUp(convertButton(id));
     mCameraMan->injectMouseUp(arg, id);
     return true;
 }
 
+void TicTacSnipeApplication::setZoomState(bool state = false) {
+    CEGUI::Window* crosshair = sheet->getChild("Crosshair");
+    const Radian fov = (state ? mCamera->getFOVy() / Zoom : mCamera->getFOVy() * Zoom);
+
+    crosshair->setVisible(state);
+    mCamera->setFOVy(fov);
+}
+
 bool TicTacSnipeApplication::keyPressed(const OIS::KeyEvent& arg) {
-    if (arg.key == OIS::KC_LSHIFT) {
-        //zoom
-        sheet->getChild("Crosshair")->setVisible(true);
-        mCamera->setFOVy(mCamera->getFOVy() / Zoom);
+    if ((!inMenu) && (arg.key == OIS::KC_LSHIFT)) {
+        // zoom
+        setZoomState(true);
     }
     return true;
 }
 
 bool TicTacSnipeApplication::keyReleased(const OIS::KeyEvent& arg) {
     if (arg.key == OIS::KC_LSHIFT) {
-        //zoom
-        sheet->getChild("Crosshair")->setVisible(false);
-        mCamera->setFOVy(mCamera->getFOVy() * Zoom);
+        // un-zoom
+        setZoomState(false);
     }
     return true;
 }
@@ -464,22 +458,18 @@ bool TicTacSnipeApplication::Start(const CEGUI::EventArgs& e) {
     //CEGUI::MouseCursor::setVisible(false);
     return true;
 }
-bool TicTacSnipeApplication::DisplayWinner(const CEGUI::EventArgs&) {
 
+bool TicTacSnipeApplication::DisplayWinner(const CEGUI::EventArgs&) {
     sheet->getChild("winner")->setVisible(false);
     CEGUI::System& sys = CEGUI::System::getSingleton();
     sys.getDefaultGUIContext().getMouseCursor().hide();
     inMenu = false;
+    setZoomState(false);
     ResetBoard();
     return true;
 }
 
 bool TicTacSnipeApplication::ResetBoard() {
-    /*
-    for (int boardNum = 0; boardNum < boards_.size(); ++boardNum) {
-        const TicTacToeBoard* board = boards_[boardNum];
-        const int winner = board->getWinner();
-    */
     const std::vector<BoardSpace*> spaces = boards_[0]->getSpaces();
     // Reset all board pieces on this board
     for (int spaceNum = 0; spaceNum < spaces.size(); ++spaceNum) {
@@ -494,8 +484,6 @@ bool TicTacSnipeApplication::ResetBoard() {
 void TicTacSnipeApplication::createFrameListener()
 {
     BaseApplication::createFrameListener();
-    //debugLabel = mTrayMgr->createLabel(OgreBites::TL_BOTTOMRIGHT, "CamPos", "", 350);
-    //debugLabel->show();
 
     //hide default overlay
     mTrayMgr->hideTrays();
@@ -556,7 +544,6 @@ void TicTacSnipeApplication::checkForWinner() {
             sys.getDefaultGUIContext().getMouseCursor().show();
             //move cursor instead of changing camera orientation
             inMenu = true;
-
         }
     }
 }
@@ -593,7 +580,7 @@ bool TicTacSnipeApplication::frameStarted(const Ogre::FrameEvent& evt)
                             // If object A is a bullet and object B is a block, check if they collide.
                             if ((checkBullet != checkBlock) && (checkBlock != nullptr) && (!checkBlock->isBullet())) {
                                 // callback will be called if A and B collide.
-                                MyContactResultCallback callback;
+                                BulletCollisionCallback callback;
                                 dynamicsWorld->contactPairTest(bodyA, bodyB, callback);
                             }
                         }
@@ -617,9 +604,6 @@ void TicTacSnipeApplication::destroyScene()
 bool TicTacSnipeApplication::frameRenderingQueued(const Ogre::FrameEvent& fe)
 {
     bool ret = BaseApplication::frameRenderingQueued(fe);
-    //const Quaternion orientation = mCamera->getOrientation();
-    //debugLabel->setCaption("Orientation: " + std::to_string(orientation.x) + ", " + std::to_string(orientation.y) + ", " + std::to_string(orientation.z));
-    //debugLabel->setCaption("CamPos: " + std::to_string(static_cast<int>(std::ceil(mCamera->getPosition().x))) + ", " + std::to_string(static_cast<int>(std::ceil(mCamera->getPosition().y))) + ", " + std::to_string(static_cast<int>(std::ceil(mCamera->getPosition().z))));
 
     //CEGUI
     if (mWindow->isClosed())
@@ -709,7 +693,6 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosition, i
     pos.z = collidablePosition.getZ();
     boxentity = mSceneMgr->createEntity("sphere.mesh");
 
-    //boxentity->setScale(Vector3(scale.x,scale.y,scale.z));
     boxentity->setCastShadows(true);
 
     boxNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();

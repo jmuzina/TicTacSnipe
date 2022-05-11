@@ -155,16 +155,11 @@ private:
         childBoardNode->rotate(spawnRotation, Ogre::Degree(90));
 
         dividers_.push_back(board);
-
-        //boards_.push_back(childBoardNode);
     };
 
     void constructBoardSpace(int spaceNumber, Vector3 spawnPosition, Quaternion spawnRotation) {
-
         BoardSpace* newBoardSpace = new BoardSpace(baseBoardNode_, mSceneMgr_, dynamicsWorld_, ActiveCollidables_, spawnPosition + spaceOffsets[spaceNumber], spawnRotation, "boardSpace" + std::to_string(spaceNumber));
         if (newBoardSpace != nullptr) spaces_.push_back(newBoardSpace);
-
-        //Collidable* createdCollidable = ActiveCollidables_->registerCollidable(baseBoard, RigidBody, Shape);
     }
 
     std::vector<BoardSpace*> spaces_ = std::vector<BoardSpace*>();

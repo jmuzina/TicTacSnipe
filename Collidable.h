@@ -99,7 +99,6 @@ private:
     void setColor(Vector4 color) {
         for (int i = 0; i < entity_->getNumSubEntities(); ++i) {
             Ogre::SubEntity* subEntity = entity_->getSubEntity(i);
-            //subEntity->setMaterialName(BASE_COLOR);
             auto material_ = subEntity->getMaterial().get()->clone(entity_->getName() + std::to_string(i));
             material_->setDiffuse(color.x, color.y, color.z, color.w);
             material_->setSpecular(color.x, color.y, color.z, color.w);

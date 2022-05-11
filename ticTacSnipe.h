@@ -56,6 +56,7 @@ private:
 	void defineTerrain(long x, long y);
 	void initBlendMaps(Ogre::Terrain* terrain);
 	void checkForWinner();
+	void setZoomState(bool);
 	Vector3 getForwardAngle() const {
 		return mCamera->getOrientation() * Vector3(0, 0, -1);
 	}
