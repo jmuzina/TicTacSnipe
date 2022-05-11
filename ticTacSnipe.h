@@ -78,8 +78,8 @@ private:
 
 	OgreBites::Label* debugLabel;
 
-	const int BULLET_FORCE = 800;
-	const btVector3 BULLET_SIZE = btVector3(0.03, 0.03, 0.03);
+	const int BULLET_FORCE = 1200;
+	const btVector3 BULLET_SIZE = btVector3(0.01, 0.01, 0.01);
 	const btScalar BULLET_MASS = 1.25;
 	const int BULLET_SPIN = 2000;
 	const float BULLET_SPAWN_Y_OFFSET = -5;
