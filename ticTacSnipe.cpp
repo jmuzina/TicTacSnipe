@@ -127,7 +127,7 @@ TicTacSnipeApplication::TicTacSnipeApplication()
     inMenu(1), //game starts with cursor showing
     Winner(0), //no one has one yet
     Zoom(2.5), //used to zoom/unzoom camera 
-    player1Turn(1) //player 1 starts first
+    player1Turn(1), //player 1 starts first
 {
 }
 
@@ -271,7 +271,7 @@ void TicTacSnipeApplication::createScene()
     CEGUI::Window* Controls = wmgr.createWindow("TaharezLook/Button", "Controls");
     Controls->setPosition(CEGUI::UVector2(CEGUI::UDim(0.7, 0), CEGUI::UDim(0.7, 0)));
     Controls->setSize(CEGUI::USize(CEGUI::UDim(0.2, 0), CEGUI::UDim(0.2, 0)));
-    Controls->setText("player1 = LMB \nplayer2 = RMB \nZoom = Lshift\n Quit = Esc");
+    Controls->setText("player1 = LMB \nplayer2 = RMB \nZoom = Lshift\n Quit = alt+F4");
     Controls->setVisible(true);
 
     //Display who's turn it is
@@ -686,6 +686,7 @@ bool TicTacSnipeApplication::frameRenderingQueued(const Ogre::FrameEvent& fe)
     mKeyboard->capture();
     mMouse->capture();
     CEGUI::System::getSingleton().injectTimePulse(fe.timeSinceLastFrame);
+
     return ret;
 }
 
