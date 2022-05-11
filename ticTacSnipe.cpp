@@ -127,7 +127,7 @@ TicTacSnipeApplication::TicTacSnipeApplication()
     inMenu(1), //game starts with cursor showing
     Winner(0), //no one has one yet
     Zoom(2.5), //used to zoom/unzoom camera 
-    player1Turn(1), //player 1 starts first
+    player1Turn(1) //player 1 starts first
 {
 }
 
