@@ -63,6 +63,8 @@ private:
 	const btScalar BULLET_MASS = 1.25;
 	const int BULLET_SPIN = 2000;
 	const float BULLET_SPAWN_Y_OFFSET = -5;
+
+	bool player1Turn = true;
 };
 
 #endif

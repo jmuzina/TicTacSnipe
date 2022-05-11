@@ -48,12 +48,30 @@ public:
 
         // Check for wins along the diagonals
         const int diagonalWinner = winnerOnDiagonal();
-        return diagonalWinner;
+
+        if (diagonalWinner == -1) {
+            // check for draw
+            for (int i = 0; i < 9; ++i) {
+                const BoardSpace* space = spaces_[i];
+                // there is a tile that has not been hit yet; game still in progress
+                if (space->getCollidable()->getOwnerId() == -1) {
+                    return -1;
+                }
+            }
+            // All tiles have been hit and no winner found; draw.
+            return -2;
+        }
+        // Winner along diagonal
+        else return diagonalWinner;
     }
 
 
     std::vector<BoardSpace*> getSpaces() const {
         return spaces_;
+    }
+
+    std::vector<Entity*> getDividers() const {
+        return dividers_;
     }
 
 
@@ -134,6 +152,8 @@ private:
         childBoardNode->setPosition(spawnPosition);
         childBoardNode->rotate(spawnRotation, Ogre::Degree(90));
 
+        dividers_.push_back(board);
+
         //boards_.push_back(childBoardNode);
     };
 
@@ -154,6 +174,8 @@ private:
     SceneManager* mSceneMgr_;
     btDiscreteDynamicsWorld* dynamicsWorld_;
     ActiveCollidables* ActiveCollidables_;
+
+    std::vector<Entity*> dividers_;
 
     Vector3 spaceOffsets[9] = {
         Vector3(40, 35, 5),         // top left

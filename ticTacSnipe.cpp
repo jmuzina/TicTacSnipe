@@ -12,13 +12,18 @@ Collidable* checkBlock = nullptr;
 bool spaceWasHit = false;
 const String BASE_COLOR = "BaseWhite";
 
+const Vector4 redVec = Vector4(1, 0, 0, 0);
+const Vector4 blueVec = Vector4(0, 0, 1, 0);
+const Vector4 greyVec = Vector4(0.25, 0.25, 0.25, 0);
+
 std::map<int, Vector4> playerColors = {
-        { 0, Vector4(1, 0, 0, 0) },
-        { 1, Vector4(0,0,1,0) }
+        { 0, redVec },
+        { 1, blueVec }
 };
 
 Ogre::MaterialPtr red = Ogre::MaterialPtr();
 Ogre::MaterialPtr blue = Ogre::MaterialPtr();
+Ogre::MaterialPtr grey = Ogre::MaterialPtr();
 
 void setColor(Ogre::Entity* ent, Vector4 color) {
     if (color != Vector4::ZERO) {
@@ -26,7 +31,7 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
             Ogre::SubEntity* subEntity = ent->getSubEntity(i);
             subEntity->setMaterialName(BASE_COLOR);
             
-            if (color == Vector4(1, 0, 0, 0)) {
+            if (color == redVec) {
                 if (red == Ogre::MaterialPtr()) {
                     auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
                     material_->setDiffuse(color.x, color.y, color.z, color.w);
@@ -38,7 +43,7 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
                     subEntity->setMaterialName(red.get()->getName());
                 }
             }
-            else if (color == Vector4(0, 0, 1, 0)) {
+            else if (color == blueVec) {
                 if (blue == Ogre::MaterialPtr()) {
                     auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
                     material_->setDiffuse(color.x, color.y, color.z, color.w);
@@ -48,6 +53,18 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
                 }
                 else {
                     subEntity->setMaterialName(blue.get()->getName());
+                }
+            }
+            else if (color == greyVec) {
+                if (grey == Ogre::MaterialPtr()) {
+                    auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
+                    material_->setDiffuse(color.x, color.y, color.z, color.w);
+                    material_->setSpecular(color.x, color.y, color.z, color.w);
+                    subEntity->setMaterialName(material_->getName());
+                    grey = material_;
+                }
+                else {
+                    subEntity->setMaterialName(grey.get()->getName());
                 }
             }
         }
@@ -75,7 +92,7 @@ struct MyContactResultCallback : public btCollisionWorld::ContactResultCallback
         if ((checkBullet != nullptr) && (checkBlock != nullptr)) {
             // Block was not hit by this bullet
             // If this isn't checked, the same bullet may "strike" the same block twice
-            if (!checkBlock->alreadyHitBy(checkBullet)) {
+            if (!checkBlock->alreadyHitBy(checkBullet) && (checkBlock->getOwnerId() == -1) && (!checkBullet->isMarkedForDeletion())) {
                 checkBlock->markHit(checkBullet);
                 setColor(checkBlock->getEntity(), playerColors.find(checkBullet->getOwnerId())->second);
                 checkBullet->markForDeletion();
@@ -183,6 +200,12 @@ void TicTacSnipeApplication::createScene()
     CreateBulletSim();
     TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(1,0,1,0), Vector3(0.2, 1, 1));
     boards_.push_back(board);
+
+    // Make all board dividers grey
+    std::vector<Entity*> dividers = board->getDividers();
+    for (int i = 0; i < dividers.size(); ++i) {
+        setColor(dividers[i], greyVec);
+    }
 }
 
 void TicTacSnipeApplication::configureTerrainDefaults(Ogre::Light* light)
@@ -283,7 +306,11 @@ bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::Mouse
 
     const int playerId = (id == OIS::MouseButtonID(0) ? 0 : 1);
 
-    CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z), playerId);
+    // Alternate player turns
+    if ((player1Turn && playerId == 0) || (!player1Turn && playerId == 1)) {
+        player1Turn = !player1Turn;
+        CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z), playerId);
+    }
     return true;
 }
 
