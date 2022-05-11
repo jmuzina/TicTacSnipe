@@ -1,3 +1,5 @@
+//TicTacToeBoard.h
+
 #ifndef TICTACTOEBOARD_H
 #define TICTACTOEBOARD_H
 
@@ -10,13 +12,13 @@
 using namespace Ogre;
 
 class TicTacToeBoard {
-	
+
 public:
-	TicTacToeBoard(SceneManager* mSceneMgr, btDiscreteDynamicsWorld* dynamicsWorld, ActiveCollidables* ActiveCollidables, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 scale) {
+    TicTacToeBoard(SceneManager* mSceneMgr, btDiscreteDynamicsWorld* dynamicsWorld, ActiveCollidables* ActiveCollidables, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 scale) {
         mSceneMgr_ = mSceneMgr;
         dynamicsWorld_ = dynamicsWorld;
         ActiveCollidables_ = ActiveCollidables;
-		baseBoardNode_ = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+        baseBoardNode_ = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 
         baseBoardNode_->setPosition(spawnPosition);
         baseBoardNode_->setOrientation(spawnRotation);
@@ -31,7 +33,7 @@ public:
         constructDivider(Vector3(0, 0, -OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
         constructDivider(Vector3(0, OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
         constructDivider(Vector3(0, -OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
-	}
+    }
 
     int getWinner() const {
         // Check for wins along rows
@@ -48,12 +50,30 @@ public:
 
         // Check for wins along the diagonals
         const int diagonalWinner = winnerOnDiagonal();
-        return diagonalWinner;
+
+        if (diagonalWinner == -1) {
+            // check for draw
+            for (int i = 0; i < 9; ++i) {
+                const BoardSpace* space = spaces_[i];
+                // there is a tile that has not been hit yet; game still in progress
+                if (space->getCollidable()->getOwnerId() == -1) {
+                    return -1;
+                }
+            }
+            // All tiles have been hit and no winner found; draw.
+            return -2;
+        }
+        // Winner along diagonal
+        else return diagonalWinner;
     }
 
 
     std::vector<BoardSpace*> getSpaces() const {
         return spaces_;
+    }
+
+    std::vector<Entity*> getDividers() const {
+        return dividers_;
     }
 
 
@@ -121,7 +141,7 @@ private:
             if (center->getCollidable()->getOwnerId() == bottomLeft->getCollidable()->getOwnerId())
                 return bottomLeft->getCollidable()->getOwnerId();
         }
-            
+
 
         return -1;
     }
@@ -134,6 +154,8 @@ private:
         childBoardNode->setPosition(spawnPosition);
         childBoardNode->rotate(spawnRotation, Ogre::Degree(90));
 
+        dividers_.push_back(board);
+
         //boards_.push_back(childBoardNode);
     };
 
@@ -144,16 +166,18 @@ private:
 
         //Collidable* createdCollidable = ActiveCollidables_->registerCollidable(baseBoard, RigidBody, Shape);
     }
-    
-	std::vector<BoardSpace*> spaces_ = std::vector<BoardSpace*>();
-	SceneNode* baseBoardNode_;
-	const int OFFSET = 20;
+
+    std::vector<BoardSpace*> spaces_ = std::vector<BoardSpace*>();
+    SceneNode* baseBoardNode_;
+    const int OFFSET = 20;
     const Vector3 VERTICAL_SCALE = Vector3(0.2, 1.15, 0.3);
     const Vector3 HORIZONTAL_SCALE = Vector3(0.2, 0.3, 1.15);
     const int BOARD_MASS = MAXINT;
     SceneManager* mSceneMgr_;
     btDiscreteDynamicsWorld* dynamicsWorld_;
     ActiveCollidables* ActiveCollidables_;
+
+    std::vector<Entity*> dividers_;
 
     Vector3 spaceOffsets[9] = {
         Vector3(40, 35, 5),         // top left

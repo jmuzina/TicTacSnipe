@@ -40,7 +40,7 @@ void setColor(Ogre::Entity* ent, Vector4 color) {
         for (int i = 0; i < ent->getNumSubEntities(); ++i) {
             Ogre::SubEntity* subEntity = ent->getSubEntity(i);
             subEntity->setMaterialName(BASE_COLOR);
-
+            
             if (color == Vector4(1, 0, 0, 0)) {
                 if (red == Ogre::MaterialPtr()) {
                     auto material_ = subEntity->getMaterial().get()->clone(ent->getName() + std::to_string(i));
@@ -215,7 +215,7 @@ void TicTacSnipeApplication::createScene()
     else
         mCamera->setFarClipDistance(50000);
 
-    /*
+	/*
     Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 
     Ogre::MeshManager::getSingleton().createPlane(
@@ -235,7 +235,7 @@ void TicTacSnipeApplication::createScene()
 
     // Materials found in env\Ogre10\sdk\media\materials\scripts\Examples.material
     groundEntity->setMaterialName("Examples/GrassFloor");
-    */
+	*/
 
     // Lighting
     mSceneMgr->setAmbientLight(Ogre::ColourValue(.4, .4, .4));
@@ -280,7 +280,7 @@ void TicTacSnipeApplication::createScene()
 
     mTerrainGroup->freeTemporaryResources();
     CreateBulletSim();
-    TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(1, 0, 1, 0), Vector3(0.2, 1, 1));
+    TicTacToeBoard* board = new TicTacToeBoard(mSceneMgr, dynamicsWorld, ActiveCollidables_, cameraLookPoint, Quaternion(1,0,1,0), Vector3(0.2, 1, 1));
     boards_.push_back(board);
 
     // Make all board dividers grey
@@ -304,7 +304,7 @@ void TicTacSnipeApplication::createScene()
     CEGUI::WindowManager& wmgr = CEGUI::WindowManager::getSingleton();
     sheet = wmgr.createWindow("DefaultWindow", "CEGUIDemo/Sheet");
     CEGUI::System::getSingleton().getDefaultGUIContext().setRootWindow(sheet);
-
+    
     //start button
     CEGUI::Window* start = wmgr.createWindow("TaharezLook/Button", "startButton");
     start->setPosition(CEGUI::UVector2(CEGUI::UDim(0.47, 0), CEGUI::UDim(0.45, 0)));
@@ -323,18 +323,18 @@ void TicTacSnipeApplication::createScene()
     Controls->setText("player1 = LMB \nplayer2 = RMB \nZoom = Lshift\n Quit = Esc");
     Controls->setVisible(true);
 
-
+    
     CEGUI::Window* Crosshair = wmgr.createWindow("DefaultWindow", "Crosshair");
     Crosshair->setPosition(CEGUI::UVector2(CEGUI::UDim(0.4, 0), CEGUI::UDim(0.4, 0)));
     Crosshair->setSize(CEGUI::USize(CEGUI::UDim(0.5, 0), CEGUI::UDim(0.5, 0)));
-
-
+    
+    
     CEGUI::Window* HLine = wmgr.createWindow("TaharezLook/ProgressBar", "Hline");
     HLine->setPosition(CEGUI::UVector2(CEGUI::UDim(0, 0), CEGUI::UDim(0.2, 0)));
     HLine->setSize(CEGUI::USize(CEGUI::UDim(0.4, 0), CEGUI::UDim(0.003, 0)));
     HLine->getProperty("CurrentProgress").append("1.0");
-
-
+    
+    
     CEGUI::Window* VLine = wmgr.createWindow("TaharezLook/ProgressBar", "Vline");
     VLine->setPosition(CEGUI::UVector2(CEGUI::UDim(0.2, 0), CEGUI::UDim(0, 0)));
     VLine->setSize(CEGUI::USize(CEGUI::UDim(0.003, 0), CEGUI::UDim(0.4, 0)));
@@ -349,7 +349,7 @@ void TicTacSnipeApplication::createScene()
     sheet->addChild(Controls);
     sheet->addChild(Crosshair);
     CEGUI::System::getSingleton().getDefaultGUIContext().setRootWindow(sheet);
-
+    
     start->subscribeEvent(CEGUI::PushButton::EventClicked, CEGUI::Event::Subscriber(&TicTacSnipeApplication::Start, this));
     DisplayWinner->subscribeEvent(CEGUI::PushButton::EventClicked, CEGUI::Event::Subscriber(&TicTacSnipeApplication::DisplayWinner, this));
 
@@ -452,15 +452,15 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
 
 bool TicTacSnipeApplication::mouseMoved(const OIS::MouseEvent& arg) {
     //CEGUI stuff
-
+    
     if (inMenu) {
         if (CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseMove(arg.state.X.rel, arg.state.Y.rel)) return true;
-        CEGUI::System& sys = CEGUI::System::getSingleton();
+            CEGUI::System& sys = CEGUI::System::getSingleton();
         if (arg.state.Z.rel)
             sys.getDefaultGUIContext().injectMouseWheelChange(arg.state.Z.rel / 120.0f);
 
     }
-
+    
     //already here
     if (mTrayMgr->injectMouseMove(arg)) return true;
     mCameraMan->injectMouseMove(arg);
@@ -469,8 +469,8 @@ bool TicTacSnipeApplication::mouseMoved(const OIS::MouseEvent& arg) {
 
 
 bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::MouseButtonID id) {
-
-    if (!inMenu) {
+    
+    if (!inMenu){
         const Ogre::Vector3 camPos = mCamera->getPosition();
         const int playerId = (id == OIS::MouseButtonID(0) ? 0 : 1);
         CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z), playerId);
@@ -492,7 +492,7 @@ bool TicTacSnipeApplication::keyPressed(const OIS::KeyEvent& arg) {
     if (arg.key == OIS::KC_LSHIFT) {
         //zoom
         sheet->getChild("Crosshair")->setVisible(true);
-        mCamera->setFOVy(mCamera->getFOVy() / Zoom);
+            mCamera->setFOVy(mCamera->getFOVy() / Zoom);
     }
     return true;
 }
@@ -501,7 +501,7 @@ bool TicTacSnipeApplication::keyReleased(const OIS::KeyEvent& arg) {
     if (arg.key == OIS::KC_LSHIFT) {
         //zoom
         sheet->getChild("Crosshair")->setVisible(false);
-        mCamera->setFOVy(mCamera->getFOVy() * Zoom);
+            mCamera->setFOVy(mCamera->getFOVy() * Zoom);
     }
     return true;
 }
@@ -609,7 +609,7 @@ void TicTacSnipeApplication::checkForWinner() {
             sys.getDefaultGUIContext().getMouseCursor().show();
             //move cursor instead of changing camera orientation
             inMenu = true;
-
+            
         }
     }
 }
@@ -761,7 +761,7 @@ void TicTacSnipeApplication::CreateBullet(const btVector3& collidablePosition, i
     pos.y = collidablePosition.getY();
     pos.z = collidablePosition.getZ();
     boxentity = mSceneMgr->createEntity("sphere.mesh");
-
+    
     //boxentity->setScale(Vector3(scale.x,scale.y,scale.z));
     boxentity->setCastShadows(true);
 

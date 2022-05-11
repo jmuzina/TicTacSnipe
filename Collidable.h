@@ -1,5 +1,6 @@
 // Interface for collidable entities
-// Developed by myself as part of Tic Tac Snipe project
+// Developed by Joe as part of Tic Tac Snipe project
+// Collidable.h
 
 #ifndef Collidable_H
 #define Collidable_H

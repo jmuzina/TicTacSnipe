@@ -91,13 +91,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(OGRE_HOME9)/include/OGRE/Overlay;$(OGRE_HOME9)/include/OGRE;$(BOOST_DIR);$(OGRE_HOME9)/include/OIS;$(OGRE_HOME9)/include;$(BULLET_INCLUDE)/BulletCollision/CollisionShapes;$(BULLET_INCLUDE);$(BULLET_INCLUDE)/LinearMath;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OGRE_HOME9)/include/OGRE/Overlay;$(OGRE_HOME9)/include/OGRE;$(BOOST_DIR);$(OGRE_HOME9)/include/OIS;$(OGRE_HOME9)/include;$(BULLET_INCLUDE)/BulletCollision/CollisionShapes;$(BULLET_INCLUDE);$(BULLET_INCLUDE)/LinearMath;$(CEGUI_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_LIB);$(OGRE_LIBS9)/debug;$(BULLET_LIBS);$(BULLET_INCLUDE);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OgreMain_d.lib;OgreOverlay_d.lib;OIS_d.lib;OgreTerrain_d.lib;BulletCollision_vs2010_debug.lib;BulletDynamics_vs2010_debug.lib;BulletSoftBody_vs2010_debug.lib;ConvexDecomposition_vs2010_debug.lib;BulletSoftBodyDX11Solvers_vs2010_debug.lib;HACD_vs2010_debug.lib;LinearMath_vs2010_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BOOST_LIB);$(OGRE_LIBS9)/debug;$(BULLET_LIBS);$(BULLET_INCLUDE);$(CEGUI_LIB);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OgreMain_d.lib;OgreOverlay_d.lib;OIS_d.lib;OgreTerrain_d.lib;BulletCollision_vs2010_debug.lib;BulletDynamics_vs2010_debug.lib;BulletSoftBody_vs2010_debug.lib;ConvexDecomposition_vs2010_debug.lib;BulletSoftBodyDX11Solvers_vs2010_debug.lib;HACD_vs2010_debug.lib;LinearMath_vs2010_debug.lib;CEGUIBase-0_d.lib;CEGUIOgreRenderer-0_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
