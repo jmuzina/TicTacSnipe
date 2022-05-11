@@ -119,11 +119,12 @@ void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
 TicTacSnipeApplication::TicTacSnipeApplication()
     :
     cameraSpawnPoint(Ogre::Vector3(2224, 212, 462)),
-    cameraLookPoint(Ogre::Vector3(2228, 250, 1406)), // Ogre::Vector3(2228, 170, 806) change this to farther from camera
+    cameraLookPoint(Ogre::Vector3(2228, 250, 1406)), // used for board's spawnpoint 
     debugLabel(0),
-    inMenu(1),
-    Winner(0),
-    Zoom(2.5)
+    inMenu(1), //game starts with cursor showing
+    Winner(0), //no one has one yet
+    Zoom(2.5), //used to zoom/unzoom camera 
+    player1Turn(1) //player 1 starts first
 {
 }
 
@@ -136,6 +137,7 @@ TicTacSnipeApplication::~TicTacSnipeApplication()
     CEGUI::OgreRenderer::destroySystem();
 }
 
+//converts OIS input into CEGUI input
 CEGUI::MouseButton convertButton(OIS::MouseButtonID buttonID) {
     switch (buttonID)
     {
@@ -159,6 +161,7 @@ CEGUI::MouseButton convertButton(OIS::MouseButtonID buttonID) {
 
 void TicTacSnipeApplication::createScene()
 {
+    //Camera setup
     mCamera->setPosition(cameraSpawnPoint);
     mCamera->lookAt(cameraLookPoint);
     mCamera->setNearClipDistance(.1);
@@ -256,38 +259,70 @@ void TicTacSnipeApplication::createScene()
     CEGUI::Window* DisplayWinner = wmgr.createWindow("TaharezLook/Button", "winner");
     DisplayWinner->setPosition(CEGUI::UVector2(CEGUI::UDim(0.45, 0), CEGUI::UDim(0.65, 0)));
     DisplayWinner->setSize(CEGUI::USize(CEGUI::UDim(0.1, 0), CEGUI::UDim(0.1, 0)));
+    //invisible until someone wins
     DisplayWinner->setVisible(false);
 
+    //Display game controls the whole game
+    //Anthony couldn't get anything but buttons to show consistently so this is
+    // a button that does nothing
     CEGUI::Window* Controls = wmgr.createWindow("TaharezLook/Button", "Controls");
     Controls->setPosition(CEGUI::UVector2(CEGUI::UDim(0.7, 0), CEGUI::UDim(0.7, 0)));
     Controls->setSize(CEGUI::USize(CEGUI::UDim(0.2, 0), CEGUI::UDim(0.2, 0)));
     Controls->setText("player1 = LMB \nplayer2 = RMB \nZoom = Lshift\n Quit = Esc");
     Controls->setVisible(true);
 
+    //Display who's turn it is
+    //player one always goes first so display it's their turn at start
+    CEGUI::Window* PlayerTurn = wmgr.createWindow("TaharezLook/Button", "playerTurn");
+    PlayerTurn->setPosition(CEGUI::UVector2(CEGUI::UDim(0.725, 0), CEGUI::UDim(0.6, 0)));
+    PlayerTurn->setSize(CEGUI::USize(CEGUI::UDim(0.15, 0), CEGUI::UDim(0.1, 0)));
+    PlayerTurn->setText("Player 1's turn");
+    PlayerTurn->setVisible(true);
 
+    //Display player scores
+    CEGUI::Window* Scores = wmgr.createWindow("TaharezLook/Button", "scores");
+    Scores->setPosition(CEGUI::UVector2(CEGUI::UDim(0.425, 0), CEGUI::UDim(0.05, 0)));
+    Scores->setSize(CEGUI::USize(CEGUI::UDim(0.15, 0), CEGUI::UDim(0.1, 0)));
+    //convert int values to string
+    std::string player1score = std::to_string(scores_[0]);
+    std::string player2score = std::to_string(scores_[1]);
+    //set start scores
+    Scores->setText("Score: " + player1score + " | " + player2score);
+    Scores->setVisible(true);
+
+
+    //Crosshair window holds horizontal and vertical lines
     CEGUI::Window* Crosshair = wmgr.createWindow("DefaultWindow", "Crosshair");
     Crosshair->setPosition(CEGUI::UVector2(CEGUI::UDim(0.4, 0), CEGUI::UDim(0.4, 0)));
     Crosshair->setSize(CEGUI::USize(CEGUI::UDim(0.5, 0), CEGUI::UDim(0.5, 0)));
+    //set crosshair as initially invisible
+    Crosshair->setVisible(false);
 
-
+    //Horizontal line
+    //used long thin buttons because Anthony could not get the game
+    // to display the crosshair.png he made
     CEGUI::Window* HLine = wmgr.createWindow("TaharezLook/ProgressBar", "Hline");
     HLine->setPosition(CEGUI::UVector2(CEGUI::UDim(0, 0), CEGUI::UDim(0.2, 0)));
     HLine->setSize(CEGUI::USize(CEGUI::UDim(0.4, 0), CEGUI::UDim(0.003, 0)));
     HLine->getProperty("CurrentProgress").append("1.0");
 
-
+    //Vertical line
     CEGUI::Window* VLine = wmgr.createWindow("TaharezLook/ProgressBar", "Vline");
     VLine->setPosition(CEGUI::UVector2(CEGUI::UDim(0.2, 0), CEGUI::UDim(0, 0)));
     VLine->setSize(CEGUI::USize(CEGUI::UDim(0.003, 0), CEGUI::UDim(0.4, 0)));
     VLine->getProperty("CurrentProgress").append("1.0");
 
+    //Add lines to crosshair
     Crosshair->addChild(VLine);
     Crosshair->addChild(HLine);
-    Crosshair->setVisible(false);
+    
+    //add windows to sheet to be displayed
     sheet->addChild(start);
     sheet->addChild(DisplayWinner);
     sheet->addChild(Controls);
     sheet->addChild(Crosshair);
+    sheet->addChild(PlayerTurn);
+    sheet->addChild(Scores);
     CEGUI::System::getSingleton().getDefaultGUIContext().setRootWindow(sheet);
 
     start->subscribeEvent(CEGUI::PushButton::EventClicked, CEGUI::Event::Subscriber(&TicTacSnipeApplication::Start, this));
@@ -389,6 +424,7 @@ void TicTacSnipeApplication::initBlendMaps(Ogre::Terrain* terrain)
 bool TicTacSnipeApplication::mouseMoved(const OIS::MouseEvent& arg) {
     //CEGUI stuff
 
+    //only when in a menu do we give CEGUI mouse movements for displaying cursor
     if (inMenu) {
         if (CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseMove(arg.state.X.rel, arg.state.Y.rel)) return true;
         CEGUI::System& sys = CEGUI::System::getSingleton();
@@ -408,8 +444,15 @@ bool TicTacSnipeApplication::mousePressed(const OIS::MouseEvent& arg, OIS::Mouse
     // Alternate player turns and only allow input if out of menu
     if ((!inMenu) && (player1Turn && playerId == 0) || (!player1Turn && playerId == 1)) {
         const Ogre::Vector3 camPos = mCamera->getPosition();
-        player1Turn = !player1Turn;
         CreateBullet(btVector3(camPos.x, camPos.y + BULLET_SPAWN_Y_OFFSET, camPos.z), playerId);
+        //change turns
+        player1Turn = !player1Turn;
+        //change turn indicator text
+        //if both buttons are pressed at the same time the player indicator can become inverted, not sure how to fix that
+        if (!player1Turn)
+            sheet->getChild("playerTurn")->setText("Player 2's turn");
+        else
+            sheet->getChild("playerTurn")->setText("Player 1's turn");
     }
 
     CEGUI::System::getSingleton().getDefaultGUIContext().injectMouseButtonDown(convertButton(id));
@@ -423,6 +466,7 @@ bool TicTacSnipeApplication::mouseReleased(const OIS::MouseEvent& arg, OIS::Mous
     return true;
 }
 
+//inverts
 void TicTacSnipeApplication::setZoomState(bool state = false) {
     if (zoomed_ != state) {
         CEGUI::Window* crosshair = sheet->getChild("Crosshair");
@@ -437,7 +481,7 @@ void TicTacSnipeApplication::setZoomState(bool state = false) {
 
 bool TicTacSnipeApplication::keyPressed(const OIS::KeyEvent& arg) {
     if ((!inMenu) && (arg.key == OIS::KC_LSHIFT)) {
-        // zoom
+        // zoom camera
         setZoomState(true);
     }
     return true;
@@ -445,34 +489,38 @@ bool TicTacSnipeApplication::keyPressed(const OIS::KeyEvent& arg) {
 
 bool TicTacSnipeApplication::keyReleased(const OIS::KeyEvent& arg) {
     if ((!inMenu) && (arg.key == OIS::KC_LSHIFT)) {
-        // un-zoom
+        // un-zoom camera
         setZoomState(false);
     }
     return true;
 }
 
-
+//hides start button, control camera orientation, hide cursor
 bool TicTacSnipeApplication::Start(const CEGUI::EventArgs& e) {
     sheet->getChild("startButton")->setVisible(false);
-    //auto mouse = CEGUI::MouseCursor::MouseCursor();
-    //mouse.hide();
+
+    inMenu = false;
+
     CEGUI::System& sys = CEGUI::System::getSingleton();
     sys.getDefaultGUIContext().getMouseCursor().hide();
-    inMenu = false;
-    //CEGUI::MouseCursor::setVisible(false);
+
     return true;
 }
 
+//hide winner box, hide mouse, control camera, reset board
 bool TicTacSnipeApplication::DisplayWinner(const CEGUI::EventArgs&) {
     sheet->getChild("winner")->setVisible(false);
+    
     CEGUI::System& sys = CEGUI::System::getSingleton();
     sys.getDefaultGUIContext().getMouseCursor().hide();
+    
     inMenu = false;
     
     ResetBoard();
     return true;
 }
 
+//reset board
 bool TicTacSnipeApplication::ResetBoard() {
     const std::vector<BoardSpace*> spaces = boards_[0]->getSpaces();
     // Reset all board pieces on this board
@@ -493,6 +541,7 @@ void TicTacSnipeApplication::createFrameListener()
     mTrayMgr->hideTrays();
 
     //CEGUI
+    //This section of CEGUI setup taken from the provided Tanks project
     OIS::ParamList pl;
     size_t windowHnd = 0;
     std::ostringstream windowHndStr;
@@ -519,6 +568,10 @@ void TicTacSnipeApplication::createFrameListener()
 
 }
 
+//check if any of the tiles are marked with a winner
+//if they are, set Winner value, look at center of board,
+//display winner, show cursor, stop controling camera,
+//unzoom if zoomed, add score to winner, update scoreboard
 void TicTacSnipeApplication::checkForWinner() {
     spaceWasHit = false;
 
@@ -549,10 +602,15 @@ void TicTacSnipeApplication::checkForWinner() {
             //move cursor instead of changing camera orientation
             inMenu = true;
 
-            // force un-zoom on game ned
+            // force un-zoom on game end
             setZoomState(false);
 
             scores_[winner] += 1;
+            
+            //update scoreboard
+            std::string player1score = std::to_string(scores_[0]);
+            std::string player2score = std::to_string(scores_[1]);
+            sheet->getChild("scores")->setText("Score: " + player1score + " | " + player2score);
         }
     }
 }
@@ -620,7 +678,6 @@ bool TicTacSnipeApplication::frameRenderingQueued(const Ogre::FrameEvent& fe)
     mKeyboard->capture();
     mMouse->capture();
     CEGUI::System::getSingleton().injectTimePulse(fe.timeSinceLastFrame);
-
     return ret;
 }
 

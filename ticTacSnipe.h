@@ -41,15 +41,21 @@ protected:
 	bool keyReleased(const OIS::KeyEvent& arg);
 	//CEGUI
 	CEGUI::OgreRenderer* mRenderer;
+	//when true will show cursor and stop moving camera orientation
 	bool inMenu;
+	//dismisses start window
 	bool Start(const CEGUI::EventArgs&);
+	//dismisses winner button and calls reset to clean the board
 	bool DisplayWinner(const CEGUI::EventArgs&);
+	//resets the board
 	bool ResetBoard();
 	//lets me hide and display menus during runtime
 	CEGUI::Window* sheet;
+	//tracks who shot the winning boards to display winner and update scores
 	int Winner;
-	const Ogre::Radian ogFOV;
+	//used to change camera fov for zoom
 	Ogre::Real Zoom;
+	
 private:
 	void CreateBulletSim(void); 
 	void configureTerrainDefaults(Ogre::Light*);
@@ -85,8 +91,11 @@ private:
 	const int BULLET_SPIN = 2000;
 	const float BULLET_SPAWN_Y_OFFSET = -5;
 
-	bool player1Turn = true;
+	//tracks who is next to fire
+	bool player1Turn;
+	//tracks if the camera is zoomed or not
 	bool zoomed_ = false;
+	//tracks player wins
 	int scores_[2] = { 0, 0 };
 };
 
