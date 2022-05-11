@@ -86,6 +86,8 @@ private:
 	const float BULLET_SPAWN_Y_OFFSET = -5;
 
 	bool player1Turn = true;
+	bool zoomed_ = false;
+	int scores_[2] = { 0, 0 };
 };
 
 #endif

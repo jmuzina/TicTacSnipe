@@ -424,11 +424,15 @@ bool TicTacSnipeApplication::mouseReleased(const OIS::MouseEvent& arg, OIS::Mous
 }
 
 void TicTacSnipeApplication::setZoomState(bool state = false) {
-    CEGUI::Window* crosshair = sheet->getChild("Crosshair");
-    const Radian fov = (state ? mCamera->getFOVy() / Zoom : mCamera->getFOVy() * Zoom);
+    if (zoomed_ != state) {
+        CEGUI::Window* crosshair = sheet->getChild("Crosshair");
+        const Radian fov = (state ? mCamera->getFOVy() / Zoom : mCamera->getFOVy() * Zoom);
 
-    crosshair->setVisible(state);
-    mCamera->setFOVy(fov);
+        crosshair->setVisible(state);
+        mCamera->setFOVy(fov);
+
+        zoomed_ = state;
+    }
 }
 
 bool TicTacSnipeApplication::keyPressed(const OIS::KeyEvent& arg) {
@@ -440,7 +444,7 @@ bool TicTacSnipeApplication::keyPressed(const OIS::KeyEvent& arg) {
 }
 
 bool TicTacSnipeApplication::keyReleased(const OIS::KeyEvent& arg) {
-    if (arg.key == OIS::KC_LSHIFT) {
+    if ((!inMenu) && (arg.key == OIS::KC_LSHIFT)) {
         // un-zoom
         setZoomState(false);
     }
@@ -464,7 +468,7 @@ bool TicTacSnipeApplication::DisplayWinner(const CEGUI::EventArgs&) {
     CEGUI::System& sys = CEGUI::System::getSingleton();
     sys.getDefaultGUIContext().getMouseCursor().hide();
     inMenu = false;
-    setZoomState(false);
+    
     ResetBoard();
     return true;
 }
@@ -544,6 +548,11 @@ void TicTacSnipeApplication::checkForWinner() {
             sys.getDefaultGUIContext().getMouseCursor().show();
             //move cursor instead of changing camera orientation
             inMenu = true;
+
+            // force un-zoom on game ned
+            setZoomState(false);
+
+            scores_[winner] += 1;
         }
     }
 }
