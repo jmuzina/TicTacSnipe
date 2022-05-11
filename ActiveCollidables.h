@@ -1,5 +1,6 @@
 // Container class allowing interface with all collidable objects
-// Written by myself for Tic Tac Snipe project
+// Written by Joe for Tic Tac Snipe project
+// ActiveCollidables.h
 
 #ifndef ACTIVE_COLLIDABLES_H
 #define ACTIVE_COLLIDABLES_H

@@ -1,3 +1,5 @@
+//TicTacToeBoard.h
+
 #ifndef TICTACTOEBOARD_H
 #define TICTACTOEBOARD_H
 
@@ -10,13 +12,13 @@
 using namespace Ogre;
 
 class TicTacToeBoard {
-	
+
 public:
-	TicTacToeBoard(SceneManager* mSceneMgr, btDiscreteDynamicsWorld* dynamicsWorld, ActiveCollidables* ActiveCollidables, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 scale) {
+    TicTacToeBoard(SceneManager* mSceneMgr, btDiscreteDynamicsWorld* dynamicsWorld, ActiveCollidables* ActiveCollidables, Vector3 spawnPosition, Quaternion spawnRotation, Vector3 scale) {
         mSceneMgr_ = mSceneMgr;
         dynamicsWorld_ = dynamicsWorld;
         ActiveCollidables_ = ActiveCollidables;
-		baseBoardNode_ = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+        baseBoardNode_ = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 
         baseBoardNode_->setPosition(spawnPosition);
         baseBoardNode_->setOrientation(spawnRotation);
@@ -31,7 +33,7 @@ public:
         constructDivider(Vector3(0, 0, -OFFSET), Vector3(0, 1, 0), VERTICAL_SCALE);
         constructDivider(Vector3(0, OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
         constructDivider(Vector3(0, -OFFSET, 0), Vector3(0, 0, 1), HORIZONTAL_SCALE);
-	}
+    }
 
     int getWinner() const {
         // Check for wins along rows
@@ -139,7 +141,7 @@ private:
             if (center->getCollidable()->getOwnerId() == bottomLeft->getCollidable()->getOwnerId())
                 return bottomLeft->getCollidable()->getOwnerId();
         }
-            
+
 
         return -1;
     }
@@ -164,10 +166,10 @@ private:
 
         //Collidable* createdCollidable = ActiveCollidables_->registerCollidable(baseBoard, RigidBody, Shape);
     }
-    
-	std::vector<BoardSpace*> spaces_ = std::vector<BoardSpace*>();
-	SceneNode* baseBoardNode_;
-	const int OFFSET = 20;
+
+    std::vector<BoardSpace*> spaces_ = std::vector<BoardSpace*>();
+    SceneNode* baseBoardNode_;
+    const int OFFSET = 20;
     const Vector3 VERTICAL_SCALE = Vector3(0.2, 1.15, 0.3);
     const Vector3 HORIZONTAL_SCALE = Vector3(0.2, 0.3, 1.15);
     const int BOARD_MASS = MAXINT;
