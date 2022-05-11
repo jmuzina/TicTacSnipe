@@ -9,6 +9,7 @@
 Collidable* checkBullet = nullptr;
 Collidable* checkBlock = nullptr;
 bool spaceWasHit = false;
+bool gameInProgress = false;
 const String BASE_COLOR = "BaseWhite";
 
 const Vector4 redVec = Vector4(1, 0, 0, 0);
@@ -94,20 +95,22 @@ struct BulletCollisionCallback : public btCollisionWorld::ContactResultCallback
         int partId1,
         int index1)
     {
-        if ((checkBullet != nullptr) && (checkBlock != nullptr)) {
-            // Valid collision if:
-            // // this block has not already been hit by this bullet
-            // // this block has not been hit by another bullet
-            // // the bullet is not marked for deletion (it has already hit another block)
-            if (!checkBlock->alreadyHitBy(checkBullet) && (checkBlock->getOwnerId() == -1) && (!checkBullet->isMarkedForDeletion())) {
-                // Mark the block as being hit
-                checkBlock->markHit(checkBullet);
-                // Set block to the color of the player who hit it
-                setColor(checkBlock->getEntity(), playerColors.find(checkBullet->getOwnerId())->second);
-                // Set bullet to be deleted on next frame and not hit any more blocks in the meantime
-                checkBullet->markForDeletion();
-                // Set space hit flag; checked in frameStarted(). When this flag is true, the board is checked to see if it is in a win-state.
-                spaceWasHit = true;
+        if (gameInProgress) {
+            if ((checkBullet != nullptr) && (checkBlock != nullptr)) {
+                // Valid collision if:
+                // // this block has not already been hit by this bullet
+                // // this block has not been hit by another bullet
+                // // the bullet is not marked for deletion (it has already hit another block)
+                if (!checkBlock->alreadyHitBy(checkBullet) && (checkBlock->getOwnerId() == -1) && (!checkBullet->isMarkedForDeletion())) {
+                    // Mark the block as being hit
+                    checkBlock->markHit(checkBullet);
+                    // Set block to the color of the player who hit it
+                    setColor(checkBlock->getEntity(), playerColors.find(checkBullet->getOwnerId())->second);
+                    // Set bullet to be deleted on next frame and not hit any more blocks in the meantime
+                    checkBullet->markForDeletion();
+                    // Set space hit flag; checked in frameStarted(). When this flag is true, the board is checked to see if it is in a win-state.
+                    spaceWasHit = true;
+                }
             }
         }
         return true;
@@ -500,6 +503,7 @@ bool TicTacSnipeApplication::Start(const CEGUI::EventArgs& e) {
     sheet->getChild("startButton")->setVisible(false);
 
     inMenu = false;
+    gameInProgress = true;
 
     CEGUI::System& sys = CEGUI::System::getSingleton();
     sys.getDefaultGUIContext().getMouseCursor().hide();
@@ -529,6 +533,7 @@ bool TicTacSnipeApplication::ResetBoard() {
         space->getCollidable()->clearHit();
         setColor(space->getCollidable()->getEntity(), Vector4::ZERO);
     }
+    gameInProgress = true;
     return true;
 }
 
@@ -582,7 +587,8 @@ void TicTacSnipeApplication::checkForWinner() {
 
         // A player has won on this board
         if (winner != -1) {
-            //set
+            gameInProgress = false;
+
             Winner = winner;
             //center view of grid
             mCamera->lookAt(cameraLookPoint);
@@ -605,12 +611,14 @@ void TicTacSnipeApplication::checkForWinner() {
             // force un-zoom on game end
             setZoomState(false);
 
-            scores_[winner] += 1;
-            
-            //update scoreboard
-            std::string player1score = std::to_string(scores_[0]);
-            std::string player2score = std::to_string(scores_[1]);
-            sheet->getChild("scores")->setText("Score: " + player1score + " | " + player2score);
+            if (winner == 0 || winner == 1) {
+                scores_[winner] += 1;
+
+                //update scoreboard
+                const std::string player1score = std::to_string(scores_[0]);
+                const std::string player2score = std::to_string(scores_[1]);
+                sheet->getChild("scores")->setText("Score: " + player1score + " | " + player2score);
+            }
         }
     }
 }
